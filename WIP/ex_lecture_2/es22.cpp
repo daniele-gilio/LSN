@@ -7,13 +7,6 @@
 using namespace std;
 
 const double pi = M_PI;
-
-double error(double* ave, double* av2, int n){
-	if(n==0)
-		return 0;
-	else
-		return sqrt((av2[n]-pow(ave[n],2))/double(n));
-}
  
 int main (int argc, char *argv[]){
 	//Inizialization of the Random Number Generator
@@ -60,9 +53,11 @@ int main (int argc, char *argv[]){
 	ofstream disc;
 	ofstream cont;
 	ofstream test;
+	ofstream sigma;
 	disc.open("disc.dat");
 	cont.open("cont.dat");
 	test.open("test.dat");
+	sigma.open("sigma.dat");
 	int t = 0;
 	
 	for(unsigned int i=0;i<M;i++){
@@ -126,14 +121,14 @@ int main (int argc, char *argv[]){
 			if(i==M-1){
 				r_disc[j]/=M;
 				r_disc_2[j]/=M;
-				sigma_disc[j]=sqrt((r_disc_2[j]-pow(r_disc[j],2)));
-				//cout << pow(r_disc[j],2) << " " << r_disc_2[j] << " " << sigma_disc[j] <<  endl;
+				sigma_disc[j]=sqrt((r_disc_2[j]-pow(r_disc[j],2))/M);
 				r_cont[j]/=M;
 				r_cont_2[j]/=M;
-				sigma_cont[j]=sqrt((r_cont_2[j]-pow(r_cont[j],2)));
+				sigma_cont[j]=sqrt((r_cont_2[j]-pow(r_cont[j],2))/M);
 				
 				disc << j << ";" << r_disc[j] << ";" << sigma_disc[j] << endl;
 				cont << j << ";" << r_cont[j] << ";" << sigma_cont[j] << endl;
+				sigma << j << ";" << sigma_disc[j] << ";" << sigma_cont[j] << endl;
 			}
 		
 		}
