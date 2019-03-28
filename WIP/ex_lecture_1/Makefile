@@ -29,6 +29,6 @@ angle_dist.o : angle_dist.cpp
 random.o : random.cpp random.h
 	$(CC) -c random.cpp -o random.o $(CFLAGS)
 clean :
-	rm *.o seed.out es11.exe es12.exe es13.exe angle_dist.exe
+	rm *.o seed.out es11.exe es12.exe es13.exe angle_dist.exe angle_dist_circle.dat angle_dist_st.dat exp_N_100.dat exp_N_10.dat exp_N_1.dat exp_N_2.dat lorentz_N_100.dat lorentz_N_10.dat lorentz_N_1.dat lorentz_N_2.dat out1.dat out2.dat out3.dat pi.dat standard_N_100.dat standard_N_10.dat standard_N_1.dat standard_N_2.dat   
 
 all: es11.exe es12.exe es13.exe angle_dist.exe

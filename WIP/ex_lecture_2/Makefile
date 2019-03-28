@@ -14,6 +14,6 @@ es22.o : es22.cpp
 random.o : random.cpp random.h
 	$(CC) -c random.cpp -o random.o $(CFLAGS)
 clean :
-	rm *.o seed.out es21.exe es22.exe
+	rm *.o seed.out es21.exe es22.exe st_sample.dat imp_sample.dat disc.dat cont.dat sigma.dat
 
 all: es21.exe es22.exe

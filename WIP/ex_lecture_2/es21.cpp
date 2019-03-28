@@ -10,7 +10,7 @@ const double pi = M_PI;
 
 double error(double* ave, double* av2, int n){
 	if(n==0)
-		return 0;
+		return 0.;
 	else
 		return sqrt((av2[n]-pow(ave[n],2))/double(n));
 } 
@@ -65,7 +65,13 @@ int main (int argc, char *argv[]){
 	double *prog_sum2_i = new double [block_number];
 	ofstream st_sample;
 	ofstream imp_sample;
+		
+	//Start of the actual program 
 	
+	st_sample.open("st_sample.dat");
+	imp_sample.open("imp_sample.dat");
+	
+	//Uniform Distribution and Importance Sampling
 	for(unsigned int i=0;i<block_number;i++){
 		I_u[i]=0;
 		I_i[i]=0;
@@ -77,16 +83,6 @@ int main (int argc, char *argv[]){
 		prog_sum_i[i]=0;
 		prog_sum2_u[i]=0;
 		prog_sum2_i[i]=0;	
-	}
-		
-	//Start of the actual program 
-	
-	st_sample.open("st_sample.dat");
-	imp_sample.open("imp_sample.dat");
-	
-	//Uniform Distribution and Importance Sampling
-	for(unsigned int i=0;i<block_number;i++){
-		//
 		for(unsigned int j=0;j<block_size;j++){
 			x=rnd.Rannyu();//<-Uniform Distribution
 			y=1.-sqrt(1.-x);//<-Importance sampling with p(x)=-2x+2
