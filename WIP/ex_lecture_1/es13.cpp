@@ -55,16 +55,13 @@ int main (int argc, char *argv[]){
 	double *pi = new double [block_number]; //Pi result's array
 	int hits = 0;
 	
-	for(unsigned int i=0;i<block_number;i++){
-		//Fill it for safety
-		pi[i]=0;
-	} 
 	
 	//Start of the actual program
 	
 	for(unsigned int i=0;i<block_number;i++){
 		//Generate the needle position and check if it intersects the grid
 		hits=0;
+		pi[i]=0.;
 		for(unsigned int j=0;j<block_size;j++){
 			point_1=rnd.Rannyu();
 			point_2=rnd.Rannyu();
@@ -85,8 +82,8 @@ int main (int argc, char *argv[]){
 	
 	//Initialize variables, arrays and output for statistical analysis
 	
-	double prog_mean = 0;
-	double prog_mean_2 = 0;
+	double prog_mean = 0.;
+	double prog_mean_2 = 0.;
 	double *mean = new double [block_number];
 	double *sigma = new double [block_number];
 	
@@ -99,10 +96,10 @@ int main (int argc, char *argv[]){
 		prog_mean+=pi[i];
 		prog_mean_2+=pow(pi[i],2);
 		if(i==0)
-			sigma[i]=0; //<-Can't compute the first sigma due to the n-1 at the denominator, we put it at 0 for convenience
+			sigma[i]=0.; //<-Can't compute the first sigma due to the n-1 at the denominator, we put it at 0 for convenience
 		else
-			sigma[i]=sqrt((prog_mean_2/(i+1)-pow(prog_mean/(i+1),2))/i);
-		mean[i]=prog_mean/(i+1);
+			sigma[i]=sqrt((prog_mean_2/double(i+1)-pow(prog_mean/double(i+1),2))/double(i));
+		mean[i]=prog_mean/double(i+1);
 		out << i << ";" << mean[i] << ";" << sigma[i] << endl;
 	}
 	

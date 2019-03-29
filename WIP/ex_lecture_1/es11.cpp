@@ -56,22 +56,19 @@ int main (int argc, char *argv[]){
 	double *prog_sum2 = new double [block_number]; // Progressive squared sum array
 	double *prog_err = new double [block_number]; // Progressive error array
 	   
-	for(int i=0;i<block_number;i++){
-		//Fill them fo safety
-		ave[i]=0;
-	   	av2[i]=0;
-	   	prog_sum[i]=0;
-	   	prog_sum2[i]=0;
-	   	prog_err[i]=0;
-	   	x[i]=i;
-	}
 	//End of inizialization
 	   
 	//Start of the actual program
 	//First section   
 	
 	for(int i=0;i<block_number;i++){
-	   	sum=0;
+	   	sum=0.;
+	   	ave[i]=0.;
+	   	av2[i]=0.;
+	   	prog_sum[i]=0.;
+	   	prog_sum2[i]=0.;
+	   	prog_err[i]=0.;
+	   	x[i]=i;
 	   	for(int j=0;j<block_size;j++){
 	   		k=j+(i*block_size);
 	   		sum+=r[k];

@@ -34,8 +34,8 @@ int main (int argc, char *argv[]){
 	
 	unsigned int realizations = 1E4;
 	unsigned int N = 1;
-	double sum_st = 0, sum_exp = 0, sum_l = 0;
-	double lambda =1, mu = 0, gamma = 1; 	
+	double sum_st = 0., sum_exp = 0., sum_l = 0.;
+	double lambda =1., mu = 0., gamma = 1.; 	
 	
 	ofstream standard;
 	ofstream exponential;
@@ -66,9 +66,9 @@ int main (int argc, char *argv[]){
 	
 	
 	for(unsigned int i=0;i<realizations;i++){
-		sum_st = 0;
-		sum_exp = 0;
-		sum_l = 0;
+		sum_st = 0.;
+		sum_exp = 0.;
+		sum_l = 0.;
 		for(unsigned int j=0;j<N;j++){
 			sum_st+=rnd.Rannyu();
 			sum_exp+=rnd.Exp(lambda);
@@ -92,9 +92,9 @@ int main (int argc, char *argv[]){
 	
 	
 	for(unsigned int i=0;i<realizations;i++){
-		sum_st = 0;
-		sum_exp = 0;
-		sum_l = 0;
+		sum_st = 0.;
+		sum_exp = 0.;
+		sum_l = 0.;
 		for(unsigned int j=0;j<N;j++){
 			sum_st+=rnd.Rannyu();
 			sum_exp+=rnd.Exp(lambda);
@@ -117,9 +117,9 @@ int main (int argc, char *argv[]){
 	
 	
 	for(unsigned int i=0;i<realizations;i++){
-		sum_st = 0;
-		sum_exp = 0;
-		sum_l = 0;
+		sum_st = 0.;
+		sum_exp = 0.;
+		sum_l = 0.;
 		for(unsigned int j=0;j<N;j++){
 			sum_st+=rnd.Rannyu();
 			sum_exp+=rnd.Exp(lambda);
