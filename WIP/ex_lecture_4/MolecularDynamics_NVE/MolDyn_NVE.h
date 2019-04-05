@@ -22,7 +22,7 @@ double x[m_part],y[m_part],z[m_part],xold[m_part],yold[m_part],zold[m_part];
 double vx[m_part],vy[m_part],vz[m_part];
 
 // thermodynamical state
-int npart;
+unsigned int npart;
 double energy,temp,vol,rho,box,rcut;
 
 // simulation
@@ -30,9 +30,10 @@ int nstep, iprint, seed;
 double delta;
 
 //functions
-void Input(void);
+void Input(bool restart, unsigned int counter);
 void Move(void);
 void ConfFinal(void);
+void ConfOld(void);
 void ConfXYZ(int);
 void Measure(void);
 double Force(int, int);
