@@ -17,111 +17,33 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 using namespace std;
 
 int main(){
-	unsigned int phase = 0.; //0 for generic, 1 for solid, 2 for liquid, 3 for gas
-  	char s[] = "sk"; //argon or krypton
-  	Execute(s);
-
-  	return 0;
-}
-
-void Execute(char []){
-	bool restart = true;
-  	unsigned int counter = 0;
-  	ofstream pot_ave, kin_ave, temp_ave, etot_ave,p_ave; 
+  	bool restart = true;
+  	unsigned int counter = 0; 
   	while(restart==true){
   		Input(restart,counter);  //Inizialization
   		cout << "Do you want to rescale velocities? (1=yes,0=no): ";
 		cin >> restart;
 		counter++;
 	}
-	unsigned int block_size = nstep/block_number;
-	restart=false;
-	counter = 1984;
-	Input(restart, counter);
  	int nconf = 1;
- 	int h=1;
- 	pot_ave.open("ave_pot.dat");
- 	kin_ave.open("ave_kin.dat");
- 	temp_ave.open("ave_temp.dat");
- 	etot_ave.open("ave_etot.dat");
- 	p_ave.open("ave_p.dat");
-  	for(unsigned int i=1;i<block_number+1;i++){
-  		for(unsigned int j=1;j<block_size+1;j++){
-	     		Move();           //Move particles with Verlet algorithm
-	     		if(h%iprint == 0) cout << "Number of time-steps: " << i*block_size << endl;
-	     		Measure(i);     //Properties measurement
-	     		if(h%10 == 0 or h==1){
-				ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
-				nconf += 1;
-	     		}
-	     		h++;
-	     	}
-	     	//Save averages for statistical analysis
-	     	ave_pot[i]/=double(block_size);
-	     	ave_pot_2[i]=pow(ave_pot[i],2.);
-	     	ave_kin[i]/=double(block_size);
-	     	ave_kin_2[i]=pow(ave_kin[i],2.);
-	     	ave_temp[i]/=double(block_size);
-	     	ave_temp_2[i]=pow(ave_temp[i],2.);
-	     	ave_etot[i]/=double(block_size);
-	     	ave_etot_2[i]=pow(ave_etot[i],2.);
-	     	ave_p[i]/=double(block_size);
-	     	ave_p_2[i]=pow(ave_p[i],2.);
-	     	for(unsigned int j=0;j<i;j++){
-	     		prog_pot[i]+=ave_pot[j];
-	     		prog_kin[i]+=ave_kin[j];
-	     		prog_temp[i]+=ave_temp[j];
-	     		prog_etot[i]+=ave_etot[j];
-	     		prog_p[i]+=ave_p[j];
-	     		prog_pot_2[i]+=ave_pot_2[j];
-	     		prog_kin_2[i]+=ave_kin_2[j];
-	     		prog_temp_2[i]+=ave_temp_2[j];
-	     		prog_etot_2[i]+=ave_etot_2[j];
-	     		prog_p_2[i]+=ave_p_2[j];
-	     	}
-	     	prog_pot[i]/=double(i);
-	     	prog_kin[i]/=double(i);
-	     	prog_temp[i]/=double(i);
-	     	prog_etot[i]/=double(i);
-	     	prog_p[i]/=double(i);
-	     	prog_pot_2[i]/=double(i);
-	     	prog_kin_2[i]/=double(i);
-	     	prog_temp_2[i]/=double(i);
-	     	prog_etot_2[i]/=double(i);
-	     	prog_p_2[i]/=double(i);
-	     	if(i==1){
-	     		sigma_pot[i]=0.;
-	     		sigma_kin[i]=0.;
-	     		sigma_temp[i]=0.;
-	     		sigma_etot[i]=0.;
-	     		sigma_p[i]=0.;
-	     	}
-	     	else{
-	     		sigma_pot[i]=error(prog_pot,prog_pot_2,i-1);
-	     		sigma_kin[i]=error(prog_kin,prog_kin_2,i-1);
-	     		sigma_temp[i]=error(prog_temp,prog_temp_2,i-1);
-	     		sigma_etot[i]=error(prog_etot,prog_etot_2,i-1);
-	     		sigma_p[i]=error(prog_p,prog_p_2,i-1);
-	     	}
-	     	
-	     	pot_ave << i << ";" << prog_pot[i] << ";" << sigma_pot[i] << endl;
-	     	kin_ave << i << ";" << prog_kin[i] << ";" << sigma_kin[i] << endl;
-	     	temp_ave << i << ";" << prog_temp[i] << ";" << sigma_temp[i] << endl;
-	     	etot_ave << i << ";" << prog_etot[i] << ";" << sigma_etot[i] << endl;
-	     	p_ave << i << ";" << prog_p[i] << ";" << sigma_p[i] << endl;
-	     		
+  	for(int istep=1; istep <= nstep; ++istep){
+     		Move();           //Move particles with Verlet algorithm
+     		if(istep%iprint == 0) cout << "Number of time-steps: " << istep << endl;
+     		if(istep%10 == 0){
+        		Measure();     //Properties measurement
+        		//ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
+        		nconf += 1;
+     		}
   	}
-  	pot_ave.close();
-  	kin_ave.close();
-  	temp_ave.close();
-  	etot_ave.close();
-  	p_ave.close();
   	ConfFinal();         //Write final configuration to restart
+
+  	return 0;
 }
+
 
 void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simulation
   	ifstream ReadInput,ReadConf;
-  	double ep, ek, pr, et, vir,fs;
+  	double ep, ek, pr, et, vir;
   
 	//Inizialization of the Random Number Generator
 	Random rnd;
@@ -148,7 +70,7 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
   
 	
 	
-	//Conglomerate to make only one control (output on terminal is a little prettier)
+	//Conglomerate couts to make only one control (output on terminal is a little prettier)
 	if(counter==0){
 		ReadInput.open("input.dat"); //Read input
 
@@ -194,14 +116,10 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
   	cout << "Read initial configuration from file config.0 " << endl << endl;
   	ReadConf.open("config.0");
   	for (int i=0; i<npart; ++i){
-  		//Read r(t)
     		ReadConf >> x[i] >> y[i] >> z[i];
     		x[i] = x[i] * box;
-    		x_t[i] = x[i];
     		y[i] = y[i] * box;
-    		y_t[i] = y[i];
     		z[i] = z[i] * box;
-    		z_t[i] = z[i];
   	}
   	ReadConf.close();
 	
@@ -222,7 +140,7 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 	
 	   	for (int idim=0; idim<3; ++idim) 
 	   		sumv[idim] /= (double)npart;
-	   	double sumv2 = 0.0;
+	   	double sumv2 = 0.0, fs;
 	   	for (int i=0; i<npart; ++i){
 	     		vx[i] = vx[i] - sumv[0];
 	     		vy[i] = vy[i] - sumv[1];
@@ -238,91 +156,69 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 	     		vy[i] *= fs;
 	     		vz[i] *= fs;
 			//Used to start verlet algorithm (can be used to reach equilibrium , not very good per se)
-	     		xold[i] = Pbc(x[i] - vx[i] * delta);
-	     		xold_t[i]=xold[i];
-	     		yold[i] = Pbc(y[i] - vy[i] * delta);
-	     		yold_t[i] = yold[i];
-	     		zold[i] = Pbc(z[i] - vz[i] * delta);
-	     		zold_t[i] = zold[i];
+	     		xold[i] = x[i] - vx[i] * delta;
+	     		yold[i] = y[i] - vy[i] * delta;
+	     		zold[i] = z[i] - vz[i] * delta;
 	   	}
+	}
+   
+   	//Restart implementation
+   	if(restart==true and counter!=0){
+   	   ifstream test;
+   	   //ofstream new_old; 
+	   unsigned int test_step = 500;
+	   for(unsigned int i=0;i<test_step;i++){
+	   	Move();
+	   	if(i==test_step-2)
+	   		ConfOld();//save r(t-dt)
+	   }
+	   Move();//arrive at r(t+dt)
+	   test.open("config.old");
+	   double x_t=0., y_t=0., z_t=0., k=0., fs=0.;
+	   for(unsigned int i=0;i<npart;i++){
+	   	test >> x_t >> y_t >> z_t;
+	   	if(int(x_t)%1==0){
+	   	vx[i]=(x[i]-x_t*box)/(2.*delta);
+	   	vy[i]=(y[i]-y_t*box)/(2.*delta);
+	   	vz[i]=(z[i]-z_t*box)/(2.*delta);
+	   	k += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
+	   	cout << k << endl;
+	   	}
+	   }
+	   stima_temp = (2.0 / 3.0) * k/(double)npart; //Temperature
+	   fs=temp/stima_temp;
+	   test.close();
+	   //new_old.open("config.old");
+	   
+	   /*for(unsigned int i=0;i<npart;i++){  
+	   	//new_old << (x[i]-vx[i]*s*2*delta)/box << "	" << (y[i]-vy[i]*s*2*delta)/box << "	" << (z[i]-vz[i]*s*2*delta)/box << endl;
 	   	
-	   	ConfOld(); //Save first old configuration
-	}
-	
-	if(restart==true and counter!=0){
-		ifstream old;
-		old.open("config.old"); 
-		for(unsigned int i=0;i<npart;i++){
-			//Read r(t-dt)
-			old >> xold_t[i] >> yold_t[i] >> zold_t[i];
-			xold_t[i]*=box;
-			yold_t[i]*=box;
-			zold_t[i]*=box;
-			xold[i]=xold_t[i];
-			yold[i]=yold_t[i];
-			zold[i]=zold_t[i];
-			if(i==0)
-				Move();//arrive at r(t+dt) and compute first velocities
-			//Save r(t+dt) for later use
-			x_t[i]=x[i];
-			y_t[i]=y[i];
-			z_t[i]=z[i];
-			//Save first velocities for later use
-			vx_t[i] = vx[i];
-    			vy_t[i] = vy[i];
-    			vz_t[i] = vz[i];
-    			
-    			cout << vx_t[i] << " " << vy_t[i] << " " << vz_t[i] << endl;
-		}
-		old.close();
-		unsigned int test_steps = 500;
-		double k = 0.;
-		
-		//Make a test simulation to get the "real" temperature
-		for(unsigned int i=0;i<test_steps;i++)
-			Move();
-		
-		//Compute "real" temperature	
-		for (unsigned int i=0; i<npart; ++i) 
-  			{k += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);cout << vx[i] << endl;}
-  		
-  		stima_temp = (2.0 / 3.0) * k/(double)npart; //Temperature
-  		//cout << stima_temp << endl;
-		
-		fs=temp/stima_temp; //Rescale factor for velocities
-		//cout << fs << endl;
-		
-		for(unsigned int i=0;i<npart;i++){
-			//Rescale velocities
-			vx_t[i]*=fs;
-			vy_t[i]*=fs;
-			vz_t[i]*=fs;
-			//Calculate new r(t-dt)
-			xold_t[i]=Pbc(x_t[i]-2.*delta*vx_t[i]);
-			yold_t[i]=Pbc(y_t[i]-2.*delta*vy_t[i]);
-			zold_t[i]=Pbc(z_t[i]-2.*delta*vz_t[i]);
-		}
-		
-		ConfOld(); //Save new old configuration
-	}
-	
-	if(restart==false and counter==1984){
-		ifstream old;
-		old.open("config.old");
-		Move(); //arrive at r(t+dt)
-		for(unsigned int i=0;i<npart;i++){
-			//Read r(t-dt)
-			old >> xold_t[i] >> yold_t[i] >> zold_t[i];
-			xold_t[i]*=box;
-			yold_t[i]*=box;
-			zold_t[i]*=box;
-			//Compute first velocities
-			vx[i] = Pbc(x[i] - xold_t[i])/(2.0 * delta);
-    			vy[i] = Pbc(y[i] - yold_t[i])/(2.0 * delta);
-    			vz[i] = Pbc(z[i] - zold_t[i])/(2.0 * delta);
-		}
-		old.close();
-	} 
+	   }
+	   
+	   //new_old.close();*/
+	   for (int idim=0; idim<3; ++idim) 
+	   		sumv[idim] /= (double)npart;
+	   	double sumv2 = 0.0;
+	   	for (int i=0; i<npart; ++i){
+	     		vx[i] = vx[i] - sumv[0];
+	     		vy[i] = vy[i] - sumv[1];
+	     		vz[i] = vz[i] - sumv[2];
+
+	     		sumv2 += vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i];
+	   	}
+	   	sumv2 /= (double)npart;
+	   	for (int i=0; i<npart; ++i){
+	     		vx[i] *= fs;
+	     		vy[i] *= fs;
+	     		vz[i] *= fs;
+			//Used to start verlet algorithm (can be used to reach equilibrium , not very good per se)
+	     		xold[i] = (x[i]-vx[i]*2*delta)/box;
+	     		yold[i] = (y[i]-vy[i]*2*delta)/box;
+	     		zold[i] = (z[i]-vz[i]*2*delta)/box;
+	   	}
+	   
+	   cout << "-----------------------------------------------------" << endl;
+   	}
 	   
    
    	return;
@@ -385,23 +281,20 @@ double Force(int ip, int idir){
   	return f;
 }
 
-void Measure(unsigned int i){ 
+void Measure(){ 
 	//Properties measurement
   	int bin;
-  	double v, t, vij, q, modulus;
+  	double v, t, vij;
   	double dx, dy, dz, dr;
-  	ofstream Epot, Ekin, Etot, Temp, P;
+  	ofstream Epot, Ekin, Etot, Temp;
 
   	Epot.open("output_epot.dat",ios::app);
   	Ekin.open("output_ekin.dat",ios::app);
   	Temp.open("output_temp.dat",ios::app);
   	Etot.open("output_etot.dat",ios::app);
-  	P.open("output_p.dat",ios::app);
 
  	v = 0.0; //Reset observables
  	t = 0.0;
- 	q=0.;
- 	
 
 	//Cycle over pairs of particles
   	for (int i=0; i<npart-1; ++i){
@@ -420,40 +313,27 @@ void Measure(unsigned int i){
 				//Potential energy
       				v += vij;
      			}
-     			
-     			q+=pow(dr,-12.)-0.5*pow(dr,-6.);
     		}          
     	}
 
 	//Kinetic energy
   	for (int i=0; i<npart; ++i) 
   		t += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
-  		
    
    	stima_pot = v/(double)npart; //Potential energy
-   	ave_pot[i]+=stima_pot;
     	stima_kin = t/(double)npart; //Kinetic energy
-    	ave_kin[i]+=stima_kin;
     	stima_temp = (2.0 / 3.0) * t/(double)npart; //Temperature
-    	ave_temp[i]+=stima_temp; 
     	stima_etot = (t+v)/(double)npart; //Total energy
-    	ave_etot[i]+=stima_etot;
-    	
-    	stima_p = rho*stima_temp+q*48./(3.*double(npart)*vol);
-    	ave_p[i]+=stima_p;
-    	//cout << stima_p << endl;
 
     	Epot << stima_pot  << endl;
     	Ekin << stima_kin  << endl;
     	Temp << stima_temp << endl;
     	Etot << stima_etot << endl;
-    	P << stima_p << endl;
 
    	Epot.close();
     	Ekin.close();
     	Temp.close();
     	Etot.close();
-    	P.close();
 
     	return;
 }
@@ -481,7 +361,7 @@ void ConfOld(void){
   	WriteConf.open("config.old");
 
   	for (int i=0; i<npart; ++i){
-    		WriteConf << xold_t[i]/box << "   " <<  yold_t[i]/box << "   " << zold_t[i]/box << endl;
+    		WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;
   	}
   	WriteConf.close();
   	return;
@@ -503,13 +383,6 @@ void ConfXYZ(int nconf){
 double Pbc(double r){  
 	//Algorithm for periodic boundary conditions with side L=box
     	return r - box * rint(r/box);
-}
-
-double error(double* ave, double* av2, int n){
-	if(n==0)
-		return 0.;
-	else
-		return sqrt((av2[n]-pow(ave[n],2))/double(n));
 }
 /****************************************************************
 *****************************************************************
