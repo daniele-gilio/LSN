@@ -1,5 +1,5 @@
-CC = g++
-CFLAGS = -Wall -O3 --std=c++11
+CC = g++ -fopenmp
+CFLAGS = -Wall -O3 --std=c++11 
 
 MolDyn_NVE.exe : MolDyn_NVE.o random.o
 	$(CC)  random.o MolDyn_NVE.o -o MolDyn_NVE.exe

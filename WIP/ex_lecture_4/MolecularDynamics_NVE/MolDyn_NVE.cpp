@@ -13,49 +13,131 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 #include <cmath>        // rint, pow
 #include "MolDyn_NVE.h"
 #include "random.h"
-
-using namespace std;
+//#include <omp.h>
 
 int main(){
-	unsigned int phase = 0.; //0 for generic, 1 for solid, 2 for liquid, 3 for gas
-  	char s[] = "sk"; //argon or krypton
-  	Execute(s);
-
-  	return 0;
+	unsigned int phase = 0; //0 for generic, 1 for solid, 2 for liquid, 3 for gas
+  	//#pragma omp parallel for
+  	for(phase=1;phase<4;phase++){
+  		cout << endl << endl << "Phase = " << phase << endl << endl << endl;
+	  	string generic = "generic";
+	  	Execute(generic,phase);
+	}
+	
+	//Inputs and outputs for real values conversion
+	ofstream argon_k, argon_pot, argon_p, argon_temp, argon_etot;
+	ofstream krypton_k, krypton_pot, krypton_p, krypton_temp, krypton_etot;
+	ifstream kinetic, potential, pressure , temperature, total;
+	
+	double kin, pot, pres, tempe, tot;
+	double s_kin, s_pot, s_pres, s_temp, s_tot;
+	//Set real values for Argon and Krypton
+	double s_a = 0.34, e_a = 120., m_a = 39.948, s_k = 0.364, e_k =164., m_k = 83.798, k_b = 1.38*1E-23;
+	unsigned int n;
+	
+	for(unsigned int j=1;j<4;j++){
+		//Open all files according to their phases
+		kinetic.open("ave_kin_generic_"+to_string(j)+".dat");
+		potential.open("ave_pot_generic_"+to_string(j)+".dat");
+		pressure.open("ave_p_generic_"+to_string(j)+".dat");
+		temperature.open("ave_temp_generic_"+to_string(j)+".dat");
+		total.open("ave_etot_generic_"+to_string(j)+".dat");
+		argon_k.open("ave_kin_argon_"+to_string(j)+".dat");
+		argon_pot.open("ave_pot_argon_"+to_string(j)+".dat");
+		argon_p.open("ave_p_argon_"+to_string(j)+".dat");
+		argon_temp.open("ave_temp_argon_"+to_string(j)+".dat");
+		argon_etot.open("ave_etot_argon_"+to_string(j)+".dat");
+		krypton_k.open("ave_kin_krypton_"+to_string(j)+".dat");
+		krypton_pot.open("ave_pot_krypton_"+to_string(j)+".dat");
+		krypton_p.open("ave_p_krypton_"+to_string(j)+".dat");
+		krypton_temp.open("ave_temp_krypton_"+to_string(j)+".dat");
+		krypton_etot.open("ave_etot_krypton_"+to_string(j)+".dat");
+		for(unsigned int i=0;i<block_number;i++){
+			//Read Generic Average Values
+			kinetic >> n >> kin >> s_kin;
+			potential >> n >> pot >> s_pot;
+			pressure >> n >> pres >> s_pres;
+			temperature >> n >> tempe >> s_temp;
+			total >> n >> tot >> s_tot;
+			//Convert them to Argon (SI units)
+			argon_k << n << ";" << kin*e_a*k_b << ";" << s_kin*e_a*k_b << endl;
+			argon_pot << n  << ";" << pot*e_a*k_b << ";" << s_pot*e_a*k_b << endl;
+			argon_p << n << ";" << pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5 << ";" << s_pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5 << endl;
+			argon_temp << n << ";" << tempe*e_a << ";" <<  s_temp*e_a << endl;
+			argon_etot << n << ";" << tot*e_a*k_b << ";" << s_tot*e_a*k_b << endl;
+			//Convert them to Krypton (SI units)
+			krypton_k << n << ";" << kin*e_k*k_b << ";" << s_kin*e_k*k_b << endl;
+			krypton_pot << n << ";" << pot*e_k*k_b << ";" << s_pot*e_k*k_b << endl;
+			krypton_p << n << ";" << pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5 << ";" << s_pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5 << endl;
+			krypton_temp << n << ";" << tempe*e_k << ";" << s_temp*e_k << endl;
+			krypton_etot << n << ";" << tot*e_k*k_b << ";" << s_tot*e_k*k_b << endl;
+			
+		}
+		kinetic.close();
+		potential.close();
+		pressure.close();
+		temperature.close();
+		total.close();
+		argon_k.close();
+		argon_pot.close();
+		argon_p.close();
+		argon_temp.close();
+		argon_etot.close();
+		krypton_k.close();
+		krypton_pot.close();
+		krypton_p.close();
+		krypton_temp.close();
+		krypton_etot.close();
+		
+	}
+	
+	return 0;
 }
 
-void Execute(char []){
+void Execute(string s, unsigned int phase){
 	bool restart = true;
   	unsigned int counter = 0;
   	ofstream pot_ave, kin_ave, temp_ave, etot_ave,p_ave; 
   	while(restart==true){
-  		Input(restart,counter);  //Inizialization
-  		cout << "Do you want to rescale velocities? (1=yes,0=no): ";
-		cin >> restart;
-		counter++;
+  		Input(restart,counter,phase);  //Inizialization
+  		if(ex==false){
+  			cout << "Do you want to rescale velocities? (1=yes,0=no): ";
+			cin >> restart;
+			counter++;
+		}
+		else
+			return;
 	}
+	
 	unsigned int block_size = nstep/block_number;
-	restart=false;
-	counter = 1984;
-	Input(restart, counter);
+			//-----------------------------------------------------------------------------------------------
+	restart=false; //create a flag that makes the program start over as the first time with correct old configuration
+	counter = 1984;//The Big Brother is watching you!
+			//------------------------------------------------------------------------------------------------
+	Input(restart, counter, phase);
  	int nconf = 1;
  	int h=1;
- 	pot_ave.open("ave_pot.dat");
- 	kin_ave.open("ave_kin.dat");
- 	temp_ave.open("ave_temp.dat");
- 	etot_ave.open("ave_etot.dat");
- 	p_ave.open("ave_p.dat");
+ 	//Open generic average outputs
+ 	pot_ave.open("ave_pot_"+s+"_"+to_string(phase)+".dat");
+ 	kin_ave.open("ave_kin_"+s+"_"+to_string(phase)+".dat");
+ 	temp_ave.open("ave_temp_"+s+"_"+to_string(phase)+".dat");
+ 	etot_ave.open("ave_etot_"+s+"_"+to_string(phase)+".dat");
+ 	p_ave.open("ave_p_"+s+"_"+to_string(phase)+".dat");
+ 	
+ 	//Actual excecution of the simulation via data blocking
   	for(unsigned int i=1;i<block_number+1;i++){
   		for(unsigned int j=1;j<block_size+1;j++){
 	     		Move();           //Move particles with Verlet algorithm
 	     		if(h%iprint == 0) cout << "Number of time-steps: " << i*block_size << endl;
 	     		Measure(i);     //Properties measurement
 	     		if(h%10 == 0 or h==1){
-				ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
+				//ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"!
+				//The line above can be improved to output different phases in different files 
 				nconf += 1;
 	     		}
-	     		h++;
+	     		h++; //Global counter 
 	     	}
+	     	
 	     	//Save averages for statistical analysis
 	     	ave_pot[i]/=double(block_size);
 	     	ave_pot_2[i]=pow(ave_pot[i],2.);
@@ -67,6 +149,7 @@ void Execute(char []){
 	     	ave_etot_2[i]=pow(ave_etot[i],2.);
 	     	ave_p[i]/=double(block_size);
 	     	ave_p_2[i]=pow(ave_p[i],2.);
+	     	//Compute averages
 	     	for(unsigned int j=0;j<i;j++){
 	     		prog_pot[i]+=ave_pot[j];
 	     		prog_kin[i]+=ave_kin[j];
@@ -89,6 +172,8 @@ void Execute(char []){
 	     	prog_temp_2[i]/=double(i);
 	     	prog_etot_2[i]/=double(i);
 	     	prog_p_2[i]/=double(i);
+	     	
+	     	//Compute errors
 	     	if(i==1){
 	     		sigma_pot[i]=0.;
 	     		sigma_kin[i]=0.;
@@ -104,11 +189,12 @@ void Execute(char []){
 	     		sigma_p[i]=error(prog_p,prog_p_2,i-1);
 	     	}
 	     	
-	     	pot_ave << i << ";" << prog_pot[i] << ";" << sigma_pot[i] << endl;
-	     	kin_ave << i << ";" << prog_kin[i] << ";" << sigma_kin[i] << endl;
-	     	temp_ave << i << ";" << prog_temp[i] << ";" << sigma_temp[i] << endl;
-	     	etot_ave << i << ";" << prog_etot[i] << ";" << sigma_etot[i] << endl;
-	     	p_ave << i << ";" << prog_p[i] << ";" << sigma_p[i] << endl;
+	     	//Output averages
+	     	pot_ave << i << " " << prog_pot[i] << " " << sigma_pot[i] << endl;
+	     	kin_ave << i << " " << prog_kin[i] << " " << sigma_kin[i] << endl;
+	     	temp_ave << i << " " << prog_temp[i] << " " << sigma_temp[i] << endl;
+	     	etot_ave << i << " " << prog_etot[i] << " " << sigma_etot[i] << endl;
+	     	p_ave << i << " " << prog_p[i] << " " << sigma_p[i] << endl;
 	     		
   	}
   	pot_ave.close();
@@ -116,10 +202,12 @@ void Execute(char []){
   	temp_ave.close();
   	etot_ave.close();
   	p_ave.close();
-  	ConfFinal();         //Write final configuration to restart
+  	
+  	ConfFinal(); //Save final configuration
 }
 
-void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simulation
+void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare all stuff for the simulation
+  	//Input streams for phase and initial configuration
   	ifstream ReadInput,ReadConf;
   	double ep, ek, pr, et, vir,fs;
   
@@ -146,32 +234,48 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
 	rnd.SaveSeed();
   
-	
-	
-	//Conglomerate to make only one control (output on terminal is a little prettier)
+	//Conglomerate to make only one control (output on terminal is a little prettier if restart option is chosen)
 	if(counter==0){
-		ReadInput.open("input.dat"); //Read input
-
+		if(phase==0){
+			ReadInput.open("input.dat"); //Read generic input
+		}
+		
+		if(phase==1){
+			ReadInput.open("input.solid"); //Read Solid input
+		}
+		
+		if(phase==2){
+			ReadInput.open("input.liquid"); //Read Liquid input
+		}
+		
+		if(phase==3){
+			ReadInput.open("input.gas"); //Read Gas input
+		}
+		
+		else if(phase>3){
+			cerr << "Wrong Phase input!!" << endl; //Throw out an error if phase number is wrong
+			ex = true;
+			return;
+		}
+		
+		//Read input phase
 		ReadInput >> temp;
-
 		ReadInput >> npart;
-	
-
 		ReadInput >> rho;
-	
-		vol = (double)npart/rho;
-	
-		box = pow(vol,1.0/3.0);
-	
 		ReadInput >> rcut;
 		ReadInput >> delta;
 		ReadInput >> nstep;
 		ReadInput >> iprint;
+		
+		//Compute necessary dimensions
+		vol = (double)npart/rho;
+		box = pow(vol,1.0/3.0);
+		
+		//Spit out informations on the program itself and on phase configuration		
 		cout << "Classic Lennard-Jones fluid        " << endl;
 	  	cout << "Molecular dynamics simulation in NVE ensemble  " << endl << endl;
 	 	cout << "Interatomic potential v(r) = 4 * [(1/r)^12 - (1/r)^6]" << endl << endl;
 	  	cout << "The program uses Lennard-Jones units " << endl;
-	
 		cout << "Number of particles = " << npart << endl;
 		cout << "Density of particles = " << rho << endl;
 		cout << "Volume of the simulation box = " << vol << endl;
@@ -179,6 +283,7 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 		cout << "The program integrates Newton equations with the Verlet method " << endl;
 		cout << "Time step = " << delta << endl;
 		cout << "Number of steps = " << nstep << endl << endl;
+		
 		ReadInput.close();
 	}
 	
@@ -206,6 +311,8 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
   	ReadConf.close();
 	
 	double sumv[3] = {0.0, 0.0, 0.0};
+	
+	//First start setup
 	if(counter==0){
 		//Prepare initial velocities (first time)
 	   	cout << "Prepare random velocities with center of mass velocity equal to zero " << endl << endl;
@@ -249,20 +356,24 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 	   	ConfOld(); //Save first old configuration
 	}
 	
+	//Restart setups
 	if(restart==true and counter!=0){
 		ifstream old;
 		old.open("config.old"); 
 		for(unsigned int i=0;i<npart;i++){
 			//Read r(t-dt)
 			old >> xold_t[i] >> yold_t[i] >> zold_t[i];
+			//Rescale positions (from relative values) to fit in the box
 			xold_t[i]*=box;
 			yold_t[i]*=box;
 			zold_t[i]*=box;
+			//Setup Verlet old positions
 			xold[i]=xold_t[i];
 			yold[i]=yold_t[i];
 			zold[i]=zold_t[i];
+			//Arrive at r(t+dt) and compute first velocities
 			if(i==0)
-				Move();//arrive at r(t+dt) and compute first velocities
+				Move();
 			//Save r(t+dt) for later use
 			x_t[i]=x[i];
 			y_t[i]=y[i];
@@ -272,9 +383,11 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
     			vy_t[i] = vy[i];
     			vz_t[i] = vz[i];
     			
-    			cout << vx_t[i] << " " << vy_t[i] << " " << vz_t[i] << endl;
+    			//cout << vx_t[i] << " " << vy_t[i] << " " << vz_t[i] << endl;
 		}
 		old.close();
+		
+		//Create values for test simulation
 		unsigned int test_steps = 500;
 		double k = 0.;
 		
@@ -286,7 +399,8 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 		for (unsigned int i=0; i<npart; ++i) 
   			{k += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);cout << vx[i] << endl;}
   		
-  		stima_temp = (2.0 / 3.0) * k/(double)npart; //Temperature
+  		//Temperature
+  		stima_temp = (2.0 / 3.0) * k/(double)npart; 
   		//cout << stima_temp << endl;
 		
 		fs=temp/stima_temp; //Rescale factor for velocities
@@ -306,6 +420,7 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 		ConfOld(); //Save new old configuration
 	}
 	
+	//Flagged restart, we want to start everything over as cleanly as possible
 	if(restart==false and counter==1984){
 		ifstream old;
 		old.open("config.old");
@@ -324,7 +439,6 @@ void Input(bool restart, unsigned int counter){ //Prepare all stuff for the simu
 		old.close();
 	} 
 	   
-   
    	return;
 }
 
@@ -362,7 +476,7 @@ void Move(void){
   	return;
 }
 
-double Force(int ip, int idir){ 
+double Force(int ip, int idir){ //This function is painfully slow, it may require optimization 
 	//Compute forces as -Grad_ip V(r)
   	double f=0.0;
  	double dvec[3], dr;
@@ -420,7 +534,7 @@ void Measure(unsigned int i){
 				//Potential energy
       				v += vij;
      			}
-     			
+     			//q is used to compute the virial
      			q+=pow(dr,-12.)-0.5*pow(dr,-6.);
     		}          
     	}
@@ -429,19 +543,21 @@ void Measure(unsigned int i){
   	for (int i=0; i<npart; ++i) 
   		t += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
   		
-   
-   	stima_pot = v/(double)npart; //Potential energy
+   	//Potential energy and average
+   	stima_pot = v/(double)npart; 
    	ave_pot[i]+=stima_pot;
-    	stima_kin = t/(double)npart; //Kinetic energy
+   	//Kinetic energy and average
+    	stima_kin = t/(double)npart; 
     	ave_kin[i]+=stima_kin;
-    	stima_temp = (2.0 / 3.0) * t/(double)npart; //Temperature
-    	ave_temp[i]+=stima_temp; 
-    	stima_etot = (t+v)/(double)npart; //Total energy
+    	//Temperature and average
+    	stima_temp = (2.0 / 3.0) * t/(double)npart; 
+    	ave_temp[i]+=stima_temp;
+    	//Total energy 
+    	stima_etot = (t+v)/(double)npart; 
     	ave_etot[i]+=stima_etot;
-    	
+    	//Pressure and average
     	stima_p = rho*stima_temp+q*48./(3.*double(npart)*vol);
     	ave_p[i]+=stima_p;
-    	//cout << stima_p << endl;
 
     	Epot << stima_pot  << endl;
     	Ekin << stima_kin  << endl;
@@ -497,7 +613,7 @@ void ConfXYZ(int nconf){
   	for (int i=0; i<npart; ++i){
     		WriteXYZ << "LJ  " << Pbc(x[i]) << "   " <<  Pbc(y[i]) << "   " << Pbc(z[i]) << endl;
   	}
- 	 WriteXYZ.close();
+ 	WriteXYZ.close();
 }
 
 double Pbc(double r){  

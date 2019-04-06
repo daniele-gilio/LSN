@@ -7,6 +7,10 @@
 _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 *****************************************************************
 *****************************************************************/
+#include <string> //---------------------------------
+//Needed here to use string in Execute function
+using namespace std;//-------------------------------
+
 //parameters, observables
 const int m_props=4;
 unsigned int block_number = 100;
@@ -56,7 +60,7 @@ int nstep, iprint, seed;
 double delta;
 
 //functions
-void Input(bool restart, unsigned int counter);
+void Input(bool restart, unsigned int counter, unsigned int phase);
 void Move(void);
 void ConfFinal(void);
 void ConfOld(void);
@@ -65,7 +69,10 @@ void Measure(unsigned int i);
 double Force(int, int);
 double Pbc(double);
 double error(double* ave, double* av2, int n);
-void Execute(char []);
+void Execute(string s, unsigned int phase);
+
+//exceptions
+bool ex = false;
 /****************************************************************
 *****************************************************************
     _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
