@@ -1,12 +1,13 @@
-/****************************************************************
-*****************************************************************
-    _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
-   _/_/  _/ _/       _/       Physics Department
-  _/  _/_/    _/    _/       Universita' degli Studi di Milano
- _/    _/       _/ _/       Prof. D.E. Galli
-_/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
-*****************************************************************
-*****************************************************************/
+/*************************************************************************
+**************************************************************************
+    _/_/_/_/       _/_/_/_/_/       Numerical Simulation Laboratory
+   _/     _/      _/               Physics Department
+  _/     _/      _/  _/_/_/       Università degli Studi di Milano
+ _/     _/ _    _/      _/  _    Daniele Gilio
+_/_/_/_/  /_/  _/_/_/_/_/  /_/  email: daniele.gilio@studenti.unimi.it
+**************************************************************************
+**************************************************************************/
+
 #include <stdlib.h>     // srand, rand: to generate random number
 #include <iostream>     // cin, cout: Standard Input/Output Streams Library
 #include <fstream>      // Stream class to both read and write from/to files.
@@ -627,6 +628,8 @@ double error(double* ave, double* av2, int n){
 	else
 		return sqrt((av2[n]-pow(ave[n],2))/double(n));
 }
+
+//Original Code by:
 /****************************************************************
 *****************************************************************
     _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
