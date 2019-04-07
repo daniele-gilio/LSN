@@ -33,7 +33,7 @@ int main(){
 	double kin, pot, pres, tempe, tot;
 	double s_kin, s_pot, s_pres, s_temp, s_tot;
 	//Set real values for Argon and Krypton
-	double s_a = 0.34, e_a = 120., m_a = 39.948, s_k = 0.364, e_k =164., m_k = 83.798, k_b = 1.38*1E-23;
+	double s_a = 0.34, e_a = 120., /*m_a = 39.948,*/ s_k = 0.364, e_k =164., /*m_k = 83.798,*/ k_b = 1.38*1E-23;
 	unsigned int n;
 	
 	for(unsigned int j=1;j<4;j++){
@@ -102,6 +102,7 @@ void Execute(string s, unsigned int phase){
   	while(restart==true){
   		Input(restart,counter,phase);  //Inizialization
   		if(ex==false){
+  			cout << endl << "The temperature after 500 test_steps is: " << stima_temp << " vs the desired: " << temp << endl;
   			cout << "Do you want to rescale velocities? (1=yes,0=no): ";
 			cin >> restart;
 			counter++;
@@ -111,11 +112,6 @@ void Execute(string s, unsigned int phase){
 	}
 	
 	unsigned int block_size = nstep/block_number;
-			//-----------------------------------------------------------------------------------------------
-	restart=false; //create a flag that makes the program start over as the first time with correct old configuration
-	counter = 1984;//The Big Brother is watching you!
-			//------------------------------------------------------------------------------------------------
-	Input(restart, counter, phase);
  	int nconf = 1;
  	int h=1;
  	//Open generic average outputs
@@ -210,7 +206,9 @@ void Execute(string s, unsigned int phase){
 void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare all stuff for the simulation
   	//Input streams for phase and initial configuration
   	ifstream ReadInput,ReadConf;
-  	double ep, ek, pr, et, vir,fs;
+  	//double ep, ek, pr, et, vir,fs;
+  	
+  	double fs;
   
 	//Inizialization of the Random Number Generator
 	Random rnd;
@@ -234,7 +232,7 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 	input.close();
 	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
 	rnd.SaveSeed();
-  
+	
 	//Conglomerate to make only one control (output on terminal is a little prettier if restart option is chosen)
 	if(counter==0){
 		if(phase==0){
@@ -299,7 +297,7 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 	//Read initial configuration (r(t))
   	cout << "Read initial configuration from file config.0 " << endl << endl;
   	ReadConf.open("config.0");
-  	for (int i=0; i<npart; ++i){
+  	for (unsigned int i=0; i<npart; ++i){
   		//Read r(t)
     		ReadConf >> x[i] >> y[i] >> z[i];
     		x[i] = x[i] * box;
@@ -318,7 +316,7 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 		//Prepare initial velocities (first time)
 	   	cout << "Prepare random velocities with center of mass velocity equal to zero " << endl << endl;
 	   	
-	   	for (int i=0; i<npart; ++i){
+	   	for (unsigned int i=0; i<npart; ++i){
 	     		vx[i] = rnd.Rannyu() - 0.5;
 	     		vy[i] = rnd.Rannyu() - 0.5;
 	     		vz[i] = rnd.Rannyu() - 0.5;
@@ -328,10 +326,10 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 	     		sumv[2] += vz[i];
 	   	}
 	
-	   	for (int idim=0; idim<3; ++idim) 
+	   	for (unsigned int idim=0; idim<3; ++idim) 
 	   		sumv[idim] /= (double)npart;
 	   	double sumv2 = 0.0;
-	   	for (int i=0; i<npart; ++i){
+	   	for (unsigned int i=0; i<npart; ++i){
 	     		vx[i] = vx[i] - sumv[0];
 	     		vy[i] = vy[i] - sumv[1];
 	     		vz[i] = vz[i] - sumv[2];
@@ -341,105 +339,75 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 	   	sumv2 /= (double)npart;
 		//Rescaling due to poor random sampling (can be avoided if we use maxwell-boltzmann distribution for velocities)
 	   	fs = sqrt(3 * temp / sumv2);   // fs = velocity scale factor 
-	   	for (int i=0; i<npart; ++i){
+	   	for (unsigned int i=0; i<npart; ++i){
 	     		vx[i] *= fs;
 	     		vy[i] *= fs;
 	     		vz[i] *= fs;
 			//Used to start verlet algorithm (can be used to reach equilibrium , not very good per se)
 	     		xold[i] = Pbc(x[i] - vx[i] * delta);
-	     		xold_t[i]=xold[i];
 	     		yold[i] = Pbc(y[i] - vy[i] * delta);
-	     		yold_t[i] = yold[i];
 	     		zold[i] = Pbc(z[i] - vz[i] * delta);
-	     		zold_t[i] = zold[i];
 	   	}
 	   	
 	   	ConfOld(); //Save first old configuration
 	}
 	
-	//Restart setups
+	
+	//Restart setup
 	if(restart==true and counter!=0){
-		ifstream old;
-		old.open("config.old"); 
+		//Make a test simulation
+		unsigned int test_steps = 500;
+		double k = 0.;
+		//Arrive at r(t-dt)
+		for(unsigned int i=0;i<test_steps-1;i++)
+			Move();
+			
+		//Save r(t-dt)
 		for(unsigned int i=0;i<npart;i++){
-			//Read r(t-dt)
-			old >> xold_t[i] >> yold_t[i] >> zold_t[i];
-			//Rescale positions (from relative values) to fit in the box
-			xold_t[i]*=box;
-			yold_t[i]*=box;
-			zold_t[i]*=box;
-			//Setup Verlet old positions
-			xold[i]=xold_t[i];
-			yold[i]=yold_t[i];
-			zold[i]=zold_t[i];
-			//Arrive at r(t+dt) and compute first velocities
-			if(i==0)
-				Move();
-			//Save r(t+dt) for later use
+			xold_t[i]=x[i];
+			yold_t[i]=y[i];
+			zold_t[i]=z[i];
+		}
+		//Arrive at r(t)
+		Move();
+		
+		//Save r(t)
+		for(unsigned int i=0;i<npart;i++){
 			x_t[i]=x[i];
 			y_t[i]=y[i];
 			z_t[i]=z[i];
-			//Save first velocities for later use
-			vx_t[i] = vx[i];
-    			vy_t[i] = vy[i];
-    			vz_t[i] = vz[i];
-    			
-    			//cout << vx_t[i] << " " << vy_t[i] << " " << vz_t[i] << endl;
 		}
-		old.close();
-		
-		//Create values for test simulation
-		unsigned int test_steps = 500;
-		double k = 0.;
-		
-		//Make a test simulation to get the "real" temperature
-		for(unsigned int i=0;i<test_steps;i++)
-			Move();
-		
-		//Compute "real" temperature	
-		for (unsigned int i=0; i<npart; ++i) 
-  			{k += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);cout << vx[i] << endl;}
-  		
-  		//Temperature
-  		stima_temp = (2.0 / 3.0) * k/(double)npart; 
-  		//cout << stima_temp << endl;
-		
-		fs=temp/stima_temp; //Rescale factor for velocities
-		//cout << fs << endl;
+		//Arrive at r(t+dt) and compute v(t)
+		Move();
 		
 		for(unsigned int i=0;i<npart;i++){
-			//Rescale velocities
-			vx_t[i]*=fs;
-			vy_t[i]*=fs;
-			vz_t[i]*=fs;
-			//Calculate new r(t-dt)
-			xold_t[i]=Pbc(x_t[i]-2.*delta*vx_t[i]);
-			yold_t[i]=Pbc(y_t[i]-2.*delta*vy_t[i]);
-			zold_t[i]=Pbc(z_t[i]-2.*delta*vz_t[i]);
+			vx[i]=Pbc(x[i]-xold_t[i])/(2.*delta);
+			vy[i]=Pbc(y[i]-yold_t[i])/(2.*delta);
+			vz[i]=Pbc(z[i]-zold_t[i])/(2.*delta);
 		}
 		
-		ConfOld(); //Save new old configuration
+		//Compute Kinetic Energy
+		for (unsigned int i=0; i<npart; ++i) 
+  			k += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
+		
+		stima_temp = (2.0 / 3.0) * k/(double)npart;
+		
+		fs = sqrt(temp/stima_temp);
+		
+		//Rescale Velocities
+		for(unsigned int i=0;i<npart;i++){
+			vx[i]*=fs;
+			vy[i]*=fs;
+			vz[i]*=fs;
+			xold[i]=Pbc(x[i]-2.*delta*vx[i]);
+			yold[i]=Pbc(y[i]-2.*delta*vy[i]);
+			zold[i]=Pbc(z[i]-2.*delta*vz[i]);
+		}
+		
+		ConfOld(); 
+		
 	}
 	
-	//Flagged restart, we want to start everything over as cleanly as possible
-	if(restart==false and counter==1984){
-		ifstream old;
-		old.open("config.old");
-		Move(); //arrive at r(t+dt)
-		for(unsigned int i=0;i<npart;i++){
-			//Read r(t-dt)
-			old >> xold_t[i] >> yold_t[i] >> zold_t[i];
-			xold_t[i]*=box;
-			yold_t[i]*=box;
-			zold_t[i]*=box;
-			//Compute first velocities
-			vx[i] = Pbc(x[i] - xold_t[i])/(2.0 * delta);
-    			vy[i] = Pbc(y[i] - yold_t[i])/(2.0 * delta);
-    			vz[i] = Pbc(z[i] - zold_t[i])/(2.0 * delta);
-		}
-		old.close();
-	} 
-	   
    	return;
 }
 
@@ -448,14 +416,14 @@ void Move(void){
 	//Move particles with Verlet algorithm
   	double xnew, ynew, znew, fx[m_part], fy[m_part], fz[m_part];
 
-  	for(int i=0; i<npart; ++i){ 
+  	for(unsigned int i=0; i<npart; ++i){ 
   		//Force acting on particle i
    		fx[i] = Force(i,0);
     		fy[i] = Force(i,1);
     		fz[i] = Force(i,2);
- 	 }
+ 	}
 
-  	for(int i=0; i<npart; ++i){ 
+  	for(unsigned int i=0; i<npart; ++i){ 
   		//Verlet integration scheme
 
     		xnew = Pbc( 2.0 * x[i] - xold[i] + fx[i] * pow(delta,2) );
@@ -477,12 +445,12 @@ void Move(void){
   	return;
 }
 
-double Force(int ip, int idir){ //This function is painfully slow, it may require optimization 
+double Force(unsigned int ip, unsigned int idir){ //This function is painfully slow, it may require optimization 
 	//Compute forces as -Grad_ip V(r)
   	double f=0.0;
  	double dvec[3], dr;
 
-  	for (int i=0; i<npart; ++i){
+  	for (unsigned int i=0; i<npart; ++i){
     		if(i != ip){
       			dvec[0] = Pbc( x[ip] - x[i] );  // distance ip-i in pbc
       			dvec[1] = Pbc( y[ip] - y[i] );
@@ -502,8 +470,8 @@ double Force(int ip, int idir){ //This function is painfully slow, it may requir
 
 void Measure(unsigned int i){ 
 	//Properties measurement
-  	int bin;
-  	double v, t, vij, q, modulus;
+  	//int bin;
+  	double v, t, vij, q;
   	double dx, dy, dz, dr;
   	ofstream Epot, Ekin, Etot, Temp, P;
 
@@ -519,8 +487,8 @@ void Measure(unsigned int i){
  	
 
 	//Cycle over pairs of particles
-  	for (int i=0; i<npart-1; ++i){
-    		for (int j=i+1; j<npart; ++j){
+  	for (unsigned int i=0; i<npart-1; ++i){
+    		for (unsigned int j=i+1; j<npart; ++j){
 
      			dx = Pbc( x[i] - x[j] );
      			dy = Pbc( y[i] - y[j] );
@@ -541,7 +509,7 @@ void Measure(unsigned int i){
     	}
 
 	//Kinetic energy
-  	for (int i=0; i<npart; ++i) 
+  	for (unsigned int i=0; i<npart; ++i) 
   		t += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
   		
    	//Potential energy and average
@@ -583,8 +551,8 @@ void ConfFinal(void){
   	cout << "Print final configuration to file config.final " << endl << endl;
   	WriteConf.open("config.final");
 
-  	for (int i=0; i<npart; ++i){
-    		WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;
+  	for (unsigned int i=0; i<npart; ++i){
+    		WriteConf << x[i]/box << " " <<  y[i]/box << " " << z[i]/box << endl;
   	}	
   	WriteConf.close();
   	return;
@@ -594,11 +562,11 @@ void ConfOld(void){
 	//Write final-1 configuration for rescaling
   	ofstream WriteConf;
 
-  	cout << "Print second to last configuration to file config.old for rescaling purposes " << endl << endl;
-  	WriteConf.open("config.old");
+  	//cout << "Print second to last configuration to file config.old for rescaling purposes " << endl << endl;
+  	WriteConf.open("config.0");
 
-  	for (int i=0; i<npart; ++i){
-    		WriteConf << xold_t[i]/box << "   " <<  yold_t[i]/box << "   " << zold_t[i]/box << endl;
+  	for (unsigned int i=0; i<npart; ++i){
+    		WriteConf << x_t[i]/box << " " <<  y_t[i]/box << " " << z_t[i]/box << endl;
   	}
   	WriteConf.close();
   	return;
@@ -611,7 +579,7 @@ void ConfXYZ(int nconf){
   	WriteXYZ.open("frames/config_" + to_string(nconf) + ".xyz");
   	WriteXYZ << npart << endl;
   	WriteXYZ << "This is only a comment!" << endl;
-  	for (int i=0; i<npart; ++i){
+  	for (unsigned int i=0; i<npart; ++i){
     		WriteXYZ << "LJ  " << Pbc(x[i]) << "   " <<  Pbc(y[i]) << "   " << Pbc(z[i]) << endl;
   	}
  	WriteXYZ.close();
@@ -622,7 +590,7 @@ double Pbc(double r){
     	return r - box * rint(r/box);
 }
 
-double error(double* ave, double* av2, int n){
+double error(double* ave, double* av2, unsigned int n){
 	if(n==0)
 		return 0.;
 	else

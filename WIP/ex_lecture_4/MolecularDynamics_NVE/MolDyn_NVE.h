@@ -67,9 +67,9 @@ void ConfFinal(void);
 void ConfOld(void);
 void ConfXYZ(int);
 void Measure(unsigned int i);
-double Force(int, int);
+double Force(unsigned int, unsigned int);
 double Pbc(double);
-double error(double* ave, double* av2, int n);
+double error(double* ave, double* av2, unsigned int n);
 void Execute(string s, unsigned int phase);
 
 //exceptions
