@@ -17,6 +17,7 @@ const int m_props=4;
 unsigned int block_number = 100;
 int n_props;
 int iv,ik,it,ie;
+bool restart = true;
 double stima_pot, stima_kin, stima_etot, stima_temp, stima_p;
 double *ave_pot = new double [block_number];
 double *prog_pot = new double [block_number];

@@ -33,7 +33,7 @@ int main(){
 	double kin, pot, pres, tempe, tot;
 	double s_kin, s_pot, s_pres, s_temp, s_tot;
 	//Set real values for Argon and Krypton
-	double s_a = 0.34, e_a = 120., /*m_a = 39.948,*/ s_k = 0.364, e_k =164., /*m_k = 83.798,*/ k_b = 1.38*1E-23;
+	double s_a = 0.34, e_a = 120., /*m_a = 39.948,*/ s_k = 0.364, e_k =164., /*m_k = 83.798,*/ k_b = 8.616*1E-5, cf =1.602181E-19;
 	unsigned int n;
 	
 	for(unsigned int j=1;j<4;j++){
@@ -63,13 +63,13 @@ int main(){
 			//Convert them to Argon (SI units)
 			argon_k << n << ";" << kin*e_a*k_b << ";" << s_kin*e_a*k_b << endl;
 			argon_pot << n  << ";" << pot*e_a*k_b << ";" << s_pot*e_a*k_b << endl;
-			argon_p << n << ";" << pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5 << ";" << s_pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5 << endl;
+			argon_p << n << ";" << pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5*cf << ";" << s_pres*e_a*k_b*pow(s_a,-3.)*pow(1E9,3.)*1E-5*cf << endl;
 			argon_temp << n << ";" << tempe*e_a << ";" <<  s_temp*e_a << endl;
 			argon_etot << n << ";" << tot*e_a*k_b << ";" << s_tot*e_a*k_b << endl;
 			//Convert them to Krypton (SI units)
 			krypton_k << n << ";" << kin*e_k*k_b << ";" << s_kin*e_k*k_b << endl;
 			krypton_pot << n << ";" << pot*e_k*k_b << ";" << s_pot*e_k*k_b << endl;
-			krypton_p << n << ";" << pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5 << ";" << s_pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5 << endl;
+			krypton_p << n << ";" << pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5*cf << ";" << s_pres*e_k*k_b*pow(s_k,-3.)*pow(1E9,3.)*1E-5*cf << endl;
 			krypton_temp << n << ";" << tempe*e_k << ";" << s_temp*e_k << endl;
 			krypton_etot << n << ";" << tot*e_k*k_b << ";" << s_tot*e_k*k_b << endl;
 			
@@ -96,13 +96,13 @@ int main(){
 }
 
 void Execute(string s, unsigned int phase){
-	bool restart = true;
+	restart=true;
   	unsigned int counter = 0;
   	ofstream pot_ave, kin_ave, temp_ave, etot_ave,p_ave; 
   	while(restart==true){
   		Input(restart,counter,phase);  //Inizialization
   		if(ex==false){
-  			cout << endl << "The temperature after 500 test_steps is: " << stima_temp << " vs the desired: " << temp << endl;
+  			cout << endl << "The temperature after 2000 test steps is: " << stima_temp << " vs the desired: " << temp << endl;
   			cout << "Do you want to rescale velocities? (1=yes,0=no): ";
 			cin >> restart;
 			counter++;
@@ -114,6 +114,30 @@ void Execute(string s, unsigned int phase){
 	unsigned int block_size = nstep/block_number;
  	int nconf = 1;
  	int h=1;
+ 	
+ 	for(unsigned int i=1;i<block_number+1;i++){
+ 		ave_pot[i-1]=0.;
+	     	ave_pot_2[i-1]=0.;
+	     	ave_kin[i-1]=0.;
+	     	ave_kin_2[i-1]=0.;
+	     	ave_temp[i-1]=0.;
+	     	ave_temp_2[i-1]=0.;
+	     	ave_etot[i-1]=0.;
+	     	ave_etot_2[i-1]=0.;
+	     	ave_p[i-1]=0.;
+	     	ave_p_2[i-1]=0.;
+	     	prog_pot[i-1]=0.;
+	     	prog_kin[i-1]=0.;
+	     	prog_temp[i-1]=0.;
+	     	prog_etot[i-1]=0.;
+	     	prog_p[i-1]=0.;
+	     	prog_pot_2[i-1]=0.;
+	     	prog_kin_2[i-1]=0.;
+	     	prog_temp_2[i-1]=0.;
+	     	prog_etot_2[i-1]=0.;
+	     	prog_p_2[i-1]=0.;
+ 	}
+ 	
  	//Open generic average outputs
  	pot_ave.open("ave_pot_"+s+"_"+to_string(phase)+".dat");
  	kin_ave.open("ave_kin_"+s+"_"+to_string(phase)+".dat");
@@ -136,62 +160,62 @@ void Execute(string s, unsigned int phase){
 	     	}
 	     	
 	     	//Save averages for statistical analysis
-	     	ave_pot[i]/=double(block_size);
-	     	ave_pot_2[i]=pow(ave_pot[i],2.);
-	     	ave_kin[i]/=double(block_size);
-	     	ave_kin_2[i]=pow(ave_kin[i],2.);
-	     	ave_temp[i]/=double(block_size);
-	     	ave_temp_2[i]=pow(ave_temp[i],2.);
-	     	ave_etot[i]/=double(block_size);
-	     	ave_etot_2[i]=pow(ave_etot[i],2.);
-	     	ave_p[i]/=double(block_size);
-	     	ave_p_2[i]=pow(ave_p[i],2.);
+	     	ave_pot[i-1]/=double(block_size);
+	     	ave_pot_2[i-1]=pow(ave_pot[i-1],2.);
+	     	ave_kin[i-1]/=double(block_size);
+	     	ave_kin_2[i-1]=pow(ave_kin[i-1],2.);
+	     	ave_temp[i-1]/=double(block_size);
+	     	ave_temp_2[i-1]=pow(ave_temp[i-1],2.);
+	     	ave_etot[i-1]/=double(block_size);
+	     	ave_etot_2[i-1]=pow(ave_etot[i-1],2.);
+	     	ave_p[i-1]/=double(block_size);
+	     	ave_p_2[i-1]=pow(ave_p[i-1],2.);
 	     	//Compute averages
 	     	for(unsigned int j=0;j<i;j++){
-	     		prog_pot[i]+=ave_pot[j];
-	     		prog_kin[i]+=ave_kin[j];
-	     		prog_temp[i]+=ave_temp[j];
-	     		prog_etot[i]+=ave_etot[j];
-	     		prog_p[i]+=ave_p[j];
-	     		prog_pot_2[i]+=ave_pot_2[j];
-	     		prog_kin_2[i]+=ave_kin_2[j];
-	     		prog_temp_2[i]+=ave_temp_2[j];
-	     		prog_etot_2[i]+=ave_etot_2[j];
-	     		prog_p_2[i]+=ave_p_2[j];
+	     		prog_pot[i-1]+=ave_pot[j];
+	     		prog_kin[i-1]+=ave_kin[j];
+	     		prog_temp[i-1]+=ave_temp[j];
+	     		prog_etot[i-1]+=ave_etot[j];
+	     		prog_p[i-1]+=ave_p[j];
+	     		prog_pot_2[i-1]+=ave_pot_2[j];
+	     		prog_kin_2[i-1]+=ave_kin_2[j];
+	     		prog_temp_2[i-1]+=ave_temp_2[j];
+	     		prog_etot_2[i-1]+=ave_etot_2[j];
+	     		prog_p_2[i-1]+=ave_p_2[j];
 	     	}
-	     	prog_pot[i]/=double(i);
-	     	prog_kin[i]/=double(i);
-	     	prog_temp[i]/=double(i);
-	     	prog_etot[i]/=double(i);
-	     	prog_p[i]/=double(i);
-	     	prog_pot_2[i]/=double(i);
-	     	prog_kin_2[i]/=double(i);
-	     	prog_temp_2[i]/=double(i);
-	     	prog_etot_2[i]/=double(i);
-	     	prog_p_2[i]/=double(i);
+	     	prog_pot[i-1]/=double(i);
+	     	prog_kin[i-1]/=double(i);
+	     	prog_temp[i-1]/=double(i);
+	     	prog_etot[i-1]/=double(i);
+	     	prog_p[i-1]/=double(i);
+	     	prog_pot_2[i-1]/=double(i);
+	     	prog_kin_2[i-1]/=double(i);
+	     	prog_temp_2[i-1]/=double(i);
+	     	prog_etot_2[i-1]/=double(i);
+	     	prog_p_2[i-1]/=double(i);
 	     	
 	     	//Compute errors
 	     	if(i==1){
-	     		sigma_pot[i]=0.;
-	     		sigma_kin[i]=0.;
-	     		sigma_temp[i]=0.;
-	     		sigma_etot[i]=0.;
-	     		sigma_p[i]=0.;
+	     		sigma_pot[i-1]=0.;
+	     		sigma_kin[i-1]=0.;
+	     		sigma_temp[i-1]=0.;
+	     		sigma_etot[i-1]=0.;
+	     		sigma_p[i-1]=0.;
 	     	}
 	     	else{
-	     		sigma_pot[i]=error(prog_pot,prog_pot_2,i-1);
-	     		sigma_kin[i]=error(prog_kin,prog_kin_2,i-1);
-	     		sigma_temp[i]=error(prog_temp,prog_temp_2,i-1);
-	     		sigma_etot[i]=error(prog_etot,prog_etot_2,i-1);
-	     		sigma_p[i]=error(prog_p,prog_p_2,i-1);
+	     		sigma_pot[i-1]=error(prog_pot,prog_pot_2,i-1);
+	     		sigma_kin[i-1]=error(prog_kin,prog_kin_2,i-1);
+	     		sigma_temp[i-1]=error(prog_temp,prog_temp_2,i-1);
+	     		sigma_etot[i-1]=error(prog_etot,prog_etot_2,i-1);
+	     		sigma_p[i-1]=error(prog_p,prog_p_2,i-1);
 	     	}
 	     	
 	     	//Output averages
-	     	pot_ave << i << " " << prog_pot[i] << " " << sigma_pot[i] << endl;
-	     	kin_ave << i << " " << prog_kin[i] << " " << sigma_kin[i] << endl;
-	     	temp_ave << i << " " << prog_temp[i] << " " << sigma_temp[i] << endl;
-	     	etot_ave << i << " " << prog_etot[i] << " " << sigma_etot[i] << endl;
-	     	p_ave << i << " " << prog_p[i] << " " << sigma_p[i] << endl;
+	     	pot_ave << i-1 << " " << prog_pot[i-1] << " " << sigma_pot[i-1] << endl;
+	     	kin_ave << i-1 << " " << prog_kin[i-1] << " " << sigma_kin[i-1] << endl;
+	     	temp_ave << i-1 << " " << prog_temp[i-1] << " " << sigma_temp[i-1] << endl;
+	     	etot_ave << i-1 << " " << prog_etot[i-1] << " " << sigma_etot[i-1] << endl;
+	     	p_ave << i-1 << " " << prog_p[i-1] << " " << sigma_p[i-1] << endl;
 	     		
   	}
   	pot_ave.close();
@@ -296,6 +320,8 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 
 	//Read initial configuration (r(t))
   	cout << "Read initial configuration from file config.0 " << endl << endl;
+  	/*if(counter==0)
+  		ReadConf.open("config.fcc");*/
   	ReadConf.open("config.0");
   	for (unsigned int i=0; i<npart; ++i){
   		//Read r(t)
@@ -356,8 +382,11 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 	//Restart setup
 	if(restart==true and counter!=0){
 		//Make a test simulation
-		unsigned int test_steps = 500;
+		unsigned int test_steps = 2000;
 		double k = 0.;
+		
+		for(unsigned int i=0;i<3;i++)
+			sumv[i]=0.;
 		//Arrive at r(t-dt)
 		for(unsigned int i=0;i<test_steps-1;i++)
 			Move();
@@ -384,7 +413,23 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 			vx[i]=Pbc(x[i]-xold_t[i])/(2.*delta);
 			vy[i]=Pbc(y[i]-yold_t[i])/(2.*delta);
 			vz[i]=Pbc(z[i]-zold_t[i])/(2.*delta);
+			sumv[0] += vx[i];
+	     		sumv[1] += vy[i];
+	     		sumv[2] += vz[i];
 		}
+		
+		for (unsigned int idim=0; idim<3; ++idim) 
+	   		sumv[idim] /= (double)npart;
+	   	double sumv2 = 0.0;
+	   	for (unsigned int i=0; i<npart; ++i){
+	     		vx[i] = vx[i] - sumv[0];
+	     		vy[i] = vy[i] - sumv[1];
+	     		vz[i] = vz[i] - sumv[2];
+
+	     		sumv2 += vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i];
+	   	}
+	   	sumv2 /= (double)npart;
+		
 		
 		//Compute Kinetic Energy
 		for (unsigned int i=0; i<npart; ++i) 
@@ -392,7 +437,7 @@ void Input(bool restart, unsigned int counter, unsigned int phase){ //Prepare al
 		
 		stima_temp = (2.0 / 3.0) * k/(double)npart;
 		
-		fs = sqrt(temp/stima_temp);
+		fs = sqrt(3 * temp / sumv2);
 		
 		//Rescale Velocities
 		for(unsigned int i=0;i<npart;i++){
@@ -474,12 +519,14 @@ void Measure(unsigned int i){
   	double v, t, vij, q;
   	double dx, dy, dz, dr;
   	ofstream Epot, Ekin, Etot, Temp, P;
-
-  	Epot.open("output_epot.dat",ios::app);
-  	Ekin.open("output_ekin.dat",ios::app);
-  	Temp.open("output_temp.dat",ios::app);
-  	Etot.open("output_etot.dat",ios::app);
-  	P.open("output_p.dat",ios::app);
+	
+	if(restart==false){
+  		Epot.open("output_epot.dat",ios::app);
+  		Ekin.open("output_ekin.dat",ios::app);
+  		Temp.open("output_temp.dat",ios::app);
+  		Etot.open("output_etot.dat",ios::app);
+  		P.open("output_p.dat",ios::app);
+  	}
 
  	v = 0.0; //Reset observables
  	t = 0.0;
@@ -521,6 +568,7 @@ void Measure(unsigned int i){
     	//Temperature and average
     	stima_temp = (2.0 / 3.0) * t/(double)npart; 
     	ave_temp[i]+=stima_temp;
+    	cout << ave_temp[i] << endl;
     	//Total energy 
     	stima_etot = (t+v)/(double)npart; 
     	ave_etot[i]+=stima_etot;
