@@ -1,12 +1,12 @@
-/****************************************************************
-*****************************************************************
-    _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
-   _/_/  _/ _/       _/       Physics Department
-  _/  _/_/    _/    _/       Universita' degli Studi di Milano
- _/    _/       _/ _/       Prof. D.E. Galli
-_/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
-*****************************************************************
-*****************************************************************/
+/*************************************************************************
+**************************************************************************
+    _/_/_/_/       _/_/_/_/_/       Numerical Simulation Laboratory
+   _/     _/      _/               Physics Department
+  _/     _/      _/  _/_/_/       Università degli Studi di Milano
+ _/     _/ _    _/      _/  _    Daniele Gilio
+_/_/_/_/  /_/  _/_/_/_/_/  /_/  email: daniele.gilio@studenti.unimi.it
+**************************************************************************
+**************************************************************************/
 
 #ifndef __fluid_
 #define __fluid_
@@ -39,6 +39,9 @@ double beta,temp,J,h;
 // simulation
 int nstep, nblk, metro;
 
+//restart
+bool restart = false;
+
 //functions
 void Input(void);
 void Reset(int);
@@ -52,7 +55,7 @@ int Pbc(int);
 double Error(double,double,int);
 
 #endif
-
+//Original Code by:
 /****************************************************************
 *****************************************************************
     _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
