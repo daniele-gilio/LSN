@@ -80,7 +80,7 @@ void Input(void){ //Prepare all stuff for the simulation
 	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
 	rnd.SaveSeed();
 
-  ReadInput.open("input.gas"); //Read input
+  ReadInput.open("input.dat"); //Read input
 
   ReadInput >> restart;
   ReadInput >> real_measure;
@@ -156,9 +156,9 @@ void Input(void){ //Prepare all stuff for the simulation
        vy[i] *= fs;
        vz[i] *= fs;
 
-       xold[i] = x[i] - vx[i] * delta;
-       yold[i] = y[i] - vy[i] * delta;
-       zold[i] = z[i] - vz[i] * delta;
+       xold[i] = Pbc(x[i] - vx[i] * delta);
+       yold[i] = Pbc(y[i] - vy[i] * delta);
+       zold[i] = Pbc(z[i] - vz[i] * delta);
      }
    }
 
@@ -210,9 +210,9 @@ void Input(void){ //Prepare all stuff for the simulation
           vy[i] *= fs;
           vz[i] *= fs;
 
-          xold[i] = x[i] - vx[i] * delta;
-          yold[i] = y[i] - vy[i] * delta;
-          zold[i] = z[i] - vz[i] * delta;
+          xold[i] = Pbc(x[i] - vx[i] * delta);
+          yold[i] = Pbc(y[i] - vy[i] * delta);
+          zold[i] = Pbc(z[i] - vz[i] * delta);
         }
    }
    return;
