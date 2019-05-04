@@ -5,7 +5,7 @@
 1
 50
 10000
-1
+0
 
   ReadInput >> temp;
   ReadInput >> nspin;

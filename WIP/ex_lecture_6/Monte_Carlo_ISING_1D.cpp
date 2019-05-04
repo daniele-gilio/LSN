@@ -181,17 +181,16 @@ double Boltzmann(int sm, int ip)
 void Measure()
 {
   //int bin;
-  double u = 0.0/*, m = 0.0*/, u_2=0., s_i=0.;
+  double u = 0.0/*, m = 0.0*/, s_i=0.;
 
 //cycle over spins
   for (int i=0; i<nspin; ++i)
   {
      u += -J * s[i] * s[Pbc(i+1)] - 0.5 * h * (s[i] + s[Pbc(i+1)]);
-     u_2 += pow(-J * s[i] * s[Pbc(i+1)] - 0.5 * h * (s[i] + s[Pbc(i+1)]), 2.);
      s_i += s[i];
   }
   walker[iu] = u;
-  walker[ic] = u_2;
+  walker[ic] = u*u;
   walker[ix] = pow(s_i, 2.);
   walker[im] = s_i;
 }
@@ -248,11 +247,11 @@ void Averages(int iblk) //Print results for current block
       Ene.close();
 
       Heat.open("output.heat.0",ios::app);
-      stima_c = ((blk_av[ic]/blk_norm/(double)nspin)-pow(stima_u, 2.))*pow(beta, 2.); //Heat Capacity
+      stima_c = (blk_av[ic]/blk_norm-pow(stima_u*double(nspin), 2.))*pow(beta, 2.); //Heat Capacity
       glob_av[ic]  += stima_c;
       glob_av2[ic] += stima_c*stima_c;
       err_c=Error(glob_av[ic],glob_av2[ic],iblk);
-      Heat << setw(wd) << iblk <<  setw(wd) << stima_c << setw(wd) << glob_av[ic]/(double)iblk << setw(wd) << err_c << endl;
+      Heat << setw(wd) << iblk <<  setw(wd) << stima_c/double(nspin) << setw(wd) << glob_av[ic]/(double)iblk/double(nspin) << setw(wd) << err_c/double(nspin) << endl;
       Heat.close();
 
       Chi.open("output.x.0",ios::app);
@@ -263,32 +262,32 @@ void Averages(int iblk) //Print results for current block
       Chi << setw(wd) << iblk <<  setw(wd) << stima_x << setw(wd) << glob_av[ix]/(double)iblk << setw(wd) << err_x << endl;
       Chi.close();
 
-      if(iblk==nblk and restart==true){
+      if(iblk==nblk){
         if(metro==1){
           Ene.open("output.ene_m.t",ios::app);
-          Ene << temp << ";" << stima_u << ";" << err_u << endl;
+          Ene << temp << ";" << glob_av[iu]/(double)iblk << ";" << err_u << endl;
           Ene.close();
 
           Heat.open("output.heat_m.t",ios::app);
-          Heat << temp << ";" << stima_c << ";" << err_c << endl;
+          Heat << temp << ";" << glob_av[ic]/(double)iblk/double(nspin) << ";" << err_c/double(nspin) << endl;
           Heat.close();
 
           Chi.open("output.x_m.t",ios::app);
-          Chi << temp << ";" << stima_x << ";" << err_x << endl;
+          Chi << temp << ";" << glob_av[ix]/(double)iblk << ";" << err_x << endl;
           Chi.close();
         }
 
         else{
           Ene.open("output.ene_g.t",ios::app);
-          Ene << temp << ";" << stima_u << ";" << err_u << endl;
+          Ene << temp << ";" << glob_av[iu]/(double)iblk << ";" << err_u << endl;
           Ene.close();
 
           Heat.open("output.heat_g.t",ios::app);
-          Heat << temp << ";" << stima_c << ";" << err_c << endl;
+          Heat << temp << ";" << glob_av[ic]/(double)iblk/double(nspin) << ";" << err_c/double(nspin) << endl;
           Heat.close();
 
           Chi.open("output.x_g.t",ios::app);
-          Chi << temp << ";" << stima_x << ";" << err_x << endl;
+          Chi << temp << ";" << glob_av[ix]/(double)iblk << ";" << err_x << endl;
           Chi.close();
         }
 
@@ -304,16 +303,16 @@ void Averages(int iblk) //Print results for current block
       Mag << setw(wd) << iblk <<  setw(wd) << stima_m << setw(wd+2) << glob_av[im]/(double)iblk << setw(wd) << err_m << endl;
       Mag.close();
 
-      if(iblk==nblk and restart==true){
+      if(iblk==nblk){
         if(metro==1){
           Mag.open("output.mag_m.t",ios::app);
-          Mag << temp << ";" << stima_m << ";" << err_m << endl;
+          Mag << temp << ";" << glob_av[im]/(double)iblk << ";" << err_m << endl;
           Mag.close();
         }
 
         else{
           Mag.open("output.mag_g.t",ios::app);
-          Mag << temp << ";" << stima_m << ";" << err_m << endl;
+          Mag << temp << ";" << glob_av[im]/(double)iblk << ";" << err_m << endl;
           Mag.close();
         }
       }
