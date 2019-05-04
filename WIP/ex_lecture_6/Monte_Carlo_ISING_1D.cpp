@@ -263,7 +263,7 @@ void Averages(int iblk) //Print results for current block
       Chi << setw(wd) << iblk <<  setw(wd) << stima_x << setw(wd) << glob_av[ix]/(double)iblk << setw(wd) << err_x << endl;
       Chi.close();
 
-      if(iblk==nblk){
+      if(iblk==nblk and restart==true){
         if(metro==1){
           Ene.open("output.ene_m.t",ios::app);
           Ene << temp << ";" << stima_u << ";" << err_u << endl;
@@ -304,7 +304,7 @@ void Averages(int iblk) //Print results for current block
       Mag << setw(wd) << iblk <<  setw(wd) << stima_m << setw(wd+2) << glob_av[im]/(double)iblk << setw(wd) << err_m << endl;
       Mag.close();
 
-      if(iblk==nblk){
+      if(iblk==nblk and restart==true){
         if(metro==1){
           Mag.open("output.mag_m.t",ios::app);
           Mag << temp << ";" << stima_m << ";" << err_m << endl;
