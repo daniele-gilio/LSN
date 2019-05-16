@@ -47,7 +47,9 @@ int main(){
       Argon();
       Krypton();
     }
+    Finalize();
     ConfFinal();         //Write final configuration to restart r(t)
+
 
   return 0;
 }
@@ -84,7 +86,7 @@ void Input(void){ //Prepare all stuff for the simulation
 	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
 	rnd.SaveSeed();
 
-  ReadInput.open("input.gas"); //Read input
+  ReadInput.open("input.liquid"); //Read input
 
   ReadInput >> restart;
   ReadInput >> real_measure;
@@ -112,6 +114,7 @@ void Input(void){ //Prepare all stuff for the simulation
   cout << "Phase: " << phase << endl << endl;
   ReadInput.close();
 
+  nblk=100;
 //Prepare array for measurements
   iv = 0; //Potential energy
   ik = 1; //Kinetic energy
@@ -614,32 +617,62 @@ void Averages(int iblk) //Print results for current block
 {
 
    double r, gdir;
-   ofstream Gofr, Gave;
+   ofstream Gofr;
    const int wd=12;
 
-    cout << "Block number " << iblk << endl;
+    //cout << "Block number " << iblk << endl;
 
     Gofr.open("output.gofr.0",ios::app);
-    Gave.open("output.gave.0",ios::app);
 
     for (int k=igofr; k<igofr+nbins; ++k){
       stima_g = blk_av[k]/(blk_norm*rho*npart*4.*pi*(pow((k-1)*bin_size,3.)-pow((k-2)*bin_size,3.))/3.); //g(r)
       glob_av[k] += stima_g;
+      r_glob_av[k] += stima_g;
       glob_av2[k] += stima_g*stima_g;
+      r_glob_av2[k] += stima_g*stima_g;
+      //cout << r_glob_av[k] << " " << r_glob_av2[k] << endl;
       err_gdir=Error(glob_av[k],glob_av2[k],iblk);
-      Gofr << (k-2)*bin_size << setw(wd) << stima_g << endl;
-      Gave << (k-2)*bin_size << setw(wd) << glob_av[k]/double(iblk) << setw(wd) << err_gdir << endl;
+      Gofr << (k-2)*bin_size << setw(wd) << glob_av[k]/double(iblk) << setw(wd) << err_gdir << endl;
     }
 
-    cout << "----------------------------" << endl << endl;
+    //cout << "----------------------------" << endl << endl;
 
-    Gave.close();
     Gofr.close();
 }
 
 double Error(double sum, double sum2, int iblk)
 {
     return sqrt((sum2/(double)iblk - pow(sum/(double)iblk,2))/(double)iblk);
+}
+
+void Finalize(){
+  ofstream Gave;
+  int wd=12;
+  if(rcut==2.2){
+    Gave.open("output.gave.0s");
+  }
+  else if(rcut==2.5){
+    Gave.open("output.gave.0l");
+  }
+
+  else if(rcut==5.){
+    Gave.open("output.gave.0g");
+  }
+
+  else{
+    Gave.open("output.gave.0");
+  }
+
+
+  for(int i=0;i<nbins;i++){
+    r_glob_av[i+igofr]/=double(nblk);
+    r_glob_av2[i+igofr]/=double(nblk);
+    err_gdir=Error(r_glob_av[i], r_glob_av2[i], i);
+
+    Gave << i*bin_size << setw(wd) << r_glob_av[i] << setw(wd) << err_gdir << endl;
+  }
+
+  Gave.close();
 }
 //Original Code by:
 /****************************************************************

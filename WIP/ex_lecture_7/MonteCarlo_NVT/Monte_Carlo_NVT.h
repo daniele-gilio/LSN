@@ -13,6 +13,7 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 
 //Random numbers
 #include "random.h"
+#include <cstring>
 int seed[4];
 Random rnd;
 
@@ -24,7 +25,7 @@ double walker[m_props];
 
 // averages
 double blk_av[m_props],blk_norm,accepted,attempted;
-double glob_av[m_props],glob_av2[m_props];
+double glob_av[m_props],glob_av2[m_props], r_glob_av[m_props], r_glob_av2[m_props];
 double stima_pot,stima_pres,stima_g,err_pot,err_press,err_gdir;
 
 //configuration

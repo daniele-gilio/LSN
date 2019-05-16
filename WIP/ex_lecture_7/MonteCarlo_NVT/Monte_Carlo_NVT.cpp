@@ -42,7 +42,7 @@ int main()
 }
 
 
-void Input(void)
+void Input()
 {
   ifstream ReadInput,ReadConf;
 
@@ -64,7 +64,7 @@ void Input(void)
    input.close();
 
 //Read input informations
-  ReadInput.open("input.gas");
+  ReadInput.open("input.dat");
 
   ReadInput >> temp;
   beta = 1.0/temp;
@@ -254,8 +254,25 @@ void Measure()
   }*/
 
   ofstream e_inst, p_inst;
-  e_inst.open("e_inst.dat", ios::app);
-  p_inst.open("p_inst.dat", ios::app);
+
+  if(rcut==2.2){
+    e_inst.open("e_inst_s.dat", ios::app);
+    p_inst.open("p_inst_s.dat", ios::app);
+  }
+  else if(rcut==2.5){
+    e_inst.open("e_inst_l.dat", ios::app);
+    p_inst.open("p_inst_l.dat", ios::app);
+  }
+
+  else if(rcut==5.){
+    e_inst.open("e_inst_g.dat", ios::app);
+    p_inst.open("p_inst_g.dat", ios::app);
+  }
+
+  else{
+    e_inst.open("e_inst.dat", ios::app);
+    p_inst.open("p_inst.dat", ios::app);
+  }
 
   e_inst << walker[iv]/double(npart)+vtail << endl;
   p_inst << rho * temp + (walker[iw] + ptail * (double)npart) / vol << endl;
@@ -307,10 +324,26 @@ void Averages(int iblk) //Print results for current block
 
     cout << "Block number " << iblk << endl;
     cout << "Acceptance rate " << accepted/attempted << endl << endl;
-
-    Epot.open("output.epot.0",ios::app);
-    Pres.open("output.pres.0",ios::app);
-    Gofr.open("output.gofr.0",ios::app);
+    if(rcut==2.2){
+      Epot.open("output.epot.0s",ios::app);
+      Pres.open("output.pres.0s",ios::app);
+      Gofr.open("output.gofr.0s",ios::app);
+    }
+    else if(rcut==2.5){
+      Epot.open("output.epot.0l",ios::app);
+      Pres.open("output.pres.0l",ios::app);
+      Gofr.open("output.gofr.0l",ios::app);
+    }
+    else if(rcut==5.){
+      Epot.open("output.epot.0g",ios::app);
+      Pres.open("output.pres.0g",ios::app);
+      Gofr.open("output.gofr.0g",ios::app);
+    }
+    else{
+      Epot.open("output.epot.0",ios::app);
+      Pres.open("output.pres.0",ios::app);
+      Gofr.open("output.gofr.0",ios::app);
+    }
 
     stima_pot = blk_av[iv]/blk_norm/(double)npart + vtail; //Potential energy
     glob_av[iv] += stima_pot;
@@ -324,7 +357,9 @@ void Averages(int iblk) //Print results for current block
     for (int k=igofr; k<igofr+nbins; ++k){
       stima_g = blk_av[k]/(blk_norm*rho*npart*4.*pi*(pow((k-1)*bin_size,3.)-pow((k-2)*bin_size,3.))/3.); //g(r)
       glob_av[k] += stima_g;
+      r_glob_av[k] += stima_g;
       glob_av2[k] += stima_g*stima_g;
+      r_glob_av2[k] += stima_g*stima_g;
       err_gdir=Error(glob_av[k],glob_av2[k],iblk);
       Gofr << k-2 << setw(wd) << (k-2)*bin_size << setw(wd) << glob_av[k]/double(iblk) << setw(wd) << err_gdir << endl;
     }
@@ -343,36 +378,28 @@ void Averages(int iblk) //Print results for current block
 
 void Finalize(){
   ofstream Gave;
-  ifstream Gin;
-  int bin, norm=0., wd=30;
-  double gave [int(nbins)], egave[int(nbins)], gave_2[int(nbins)];
-  double ave;
-  Gin.open("output.gofr.0");
-
-  while(!Gin.eof()){
-    Gin >> bin;
-    if(bin==0)
-      norm++;
-    //Read x
-    Gin >> ave;
-    //Read y
-    Gin >> ave;
-    //Sum
-    gave[bin]+=ave;
-    gave_2[bin]+=ave*ave;
-    //Read Error
-    Gin >> ave;
+  int wd=12;
+  if(rcut==2.2){
+    Gave.open("output.gave.0s");
+  }
+  else if(rcut==2.5){
+    Gave.open("output.gave.0l");
   }
 
-  Gin.close();
+  else if(rcut==5.){
+    Gave.open("output.gave.0g");
+  }
 
-  Gave.open("output.gave.0");
+  else{
+    Gave.open("output.gave.0");
+  }
+
 
   for(int i=0;i<nbins;i++){
-    gave[i]/=double(norm);
-    gave_2[i]/=double(norm);
-    egave[i]=sqrt((gave_2[i]-pow(gave[i],2.))/double(i+1));
-    Gave << i*bin_size << setw(wd) << gave[i] << setw(wd) << egave[i] << endl;
+    r_glob_av[i+igofr]/=double(nblk);
+    r_glob_av2[i+igofr]/=double(nblk);
+    err_gdir=Error(r_glob_av[i], r_glob_av2[i], i);
+    Gave << i*bin_size << setw(wd) << r_glob_av[i] << setw(wd) << err_gdir << endl;
   }
 
   Gave.close();

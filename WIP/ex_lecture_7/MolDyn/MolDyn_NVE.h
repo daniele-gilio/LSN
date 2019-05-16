@@ -20,6 +20,7 @@ const double pi = 3.1415927;
 double acc,att;
 double blk_av[m_props],blk_norm;
 double glob_av[m_props],glob_av2[m_props];
+double r_glob_av[m_props], r_glob_av2[m_props];
 double stima_g,err_gdir;
 
 //restart
@@ -88,6 +89,7 @@ void Reset(int);
 void Accumulate(void);
 void Averages(int);
 double Error(double,double,int);
+void Finalize(void);
 //Original code by:
 /****************************************************************
 *****************************************************************
