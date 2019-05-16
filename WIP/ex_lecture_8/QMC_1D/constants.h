@@ -13,10 +13,11 @@ This is the definition of the physical constants. The constants have been
 put to 1 in order to work with more comfortable numbers (i.e. the potential
 energy of the harmonic oscillator on its ground state is 0.25hbar^2*w)
 */
-
+#include "random.h"
 double hbar = 1;
 double boltzmann = 1;
 double mass = 1;
+Random rnd;
 
 
 /****** GLOBAL VARIABLES ************/
@@ -52,11 +53,11 @@ double* positions;
 double* potential_energy;
 double* potential_energy_accumulator;
 double* potential_energy_square_accumulator;
-                                                                                                                 
+
 double* kinetic_energy;
 double* kinetic_energy_accumulator;
 double* kinetic_energy_square_accumulator;
-                                                                                                                 
+
 double* positions_histogram;
 double* positions_histogram_accumulator;
 double* positions_histogram_square_accumulator;

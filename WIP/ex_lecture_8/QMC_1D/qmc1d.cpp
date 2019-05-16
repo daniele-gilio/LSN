@@ -19,44 +19,45 @@ See: http://root.cern.ch
 There are two other source files, too:
 constants.h: contains the declaration of every global variable that has been used.
 functions.h: contains the declaration of the function with a brief description.
-Once compiled, QMC1D is invoked with the command: "./qmc1d". It will read the settings 
+Once compiled, QMC1D is invoked with the command: "./qmc1d". It will read the settings
 in the file "input.dat".
 */
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <TRandom3.h>
+//#include <TRandom3.h>
+//#include "random.h"
 #include "constants.h"
 #include "functions.h"
 
 #define LEFT 0
 #define RIGHT 1
 
-TRandom3* generator;
+//TRandom3* generator;
 
 using namespace std;
 
 int main()
 {
-        readInput();  
-	initialize();  
+        readInput();
+	initialize();
 /* at this time, every variable you see, such for instance "equilibration",
 has been either acquired from "input.dat" by the readInput() function or
 opportunely initialized by the initialize() function. */
 	for(int i=0;i<equilibration;i++)
 	{
-		if(PIGS)   // only a PIGS polymer has a start and an end. 
+		if(PIGS)   // only a PIGS polymer has a start and an end.
 		{
 			brownianMotion(LEFT);
 			brownianMotion(RIGHT);
 		}
-		
+
 		translation();
-		
-		for(int j=0;j<brownianBridgeAttempts;j++) 
+
+		for(int j=0;j<brownianBridgeAttempts;j++)
 			brownianBridge();
 	}
-	
+
 	for(int b=0;b<blocks;b++)
 	{
 		for(int i=0;i<MCSTEPS;i++)
@@ -67,16 +68,16 @@ opportunely initialized by the initialize() function. */
 				brownianMotion(RIGHT);
 			}
 			translation();
-		
+
 			for(int j=0;j<brownianBridgeAttempts;j++)
 				brownianBridge();
-			
+
 			upgradeAverages();
 		}
 		cout<<"Completed block: "<<b+1<<"/"<<blocks<<endl;
 		endBlock();
 	}
-	
+
 	consoleOutput();
 	finalizePotentialEstimator();
 	finalizeKineticEstimator();
@@ -91,7 +92,7 @@ double potential_density_matrix(double val, double val_next)
 {
 	double dens_left = -dtau*external_potential(val)/2;
 	double dens_right = -dtau*external_potential(val_next)/2;
-	
+
 	return dens_left+dens_right;
 }
 
@@ -103,12 +104,12 @@ void initialize()
 		PIGS=1;
 	else
 		PIGS=0;
-	
+
 	if(PIGS)
 		dtau = imaginaryTimePropagation/(timeslices-1);
 	else
 		dtau = hbar/(boltzmann*temperature*timeslices);
-	
+
 	acceptedTranslations=0;
 	acceptedVariational=0;
 	acceptedBB=0;
@@ -117,25 +118,45 @@ void initialize()
 	totalVariational=0;
 	totalBB=0;
         totalBM=0;
-	
-	generator = new TRandom3();
-	
+
+	//generator = new TRandom3();
+	int seed[4];
+	int p1, p2;
+	ifstream Primes("Primes");
+	if (Primes.is_open()){
+		Primes >> p1 >> p2 ;
+	} else cerr << "PROBLEM: Unable to open Primes" << endl;
+	Primes.close();
+	ifstream input("seed.in");
+	string property;
+	if (input.is_open()){
+		while ( !input.eof() ){
+			input >> property;
+			if( property == "RANDOMSEED" ){
+			input >> seed[0] >> seed[1] >> seed[2] >> seed[3];
+			rnd.SetRandom(seed,p1,p2);
+			}
+		}
+	input.close();
+	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
+	rnd.SaveSeed();
+
 	positions=new double[timeslices];
 	potential_energy=new double[timeslices];
 	potential_energy_accumulator=new double[timeslices];
 	potential_energy_square_accumulator=new double[timeslices];
-                                                                                                                 
+
 	kinetic_energy=new double[timeslices];
 	kinetic_energy_accumulator=new double[timeslices];
 	kinetic_energy_square_accumulator=new double[timeslices];
-                                                                                                                
+
 	positions_histogram=new double[histogram_bins];
 	positions_histogram_accumulator=new double[histogram_bins];
 	positions_histogram_square_accumulator=new double[histogram_bins];
-	
+
 	for(int i=0;i<timeslices;i++)
 		positions[i]=0.0;
-	
+
 	for(int i=0;i<timeslices;i++)
 	{
 		potential_energy[i]=0;
@@ -146,7 +167,7 @@ void initialize()
 		kinetic_energy_accumulator[i]=0;
 		kinetic_energy_square_accumulator[i]=0;
 	}
-	
+
 	for(int i=0;i<histogram_bins;i++)
 	{
 		positions_histogram[i]=0;
@@ -160,20 +181,23 @@ void initialize()
 // to modify its first and second derivatives too !
 double external_potential(double val)
 {
-	double k_elastic = 1;
-	return k_elastic*val*val/2.0;
+	/*double k_elastic = 1;
+	return k_elastic*val*val/2.0;*/
+  return pow(val,4.)-2.5*pow(val,2.);
 }
 
 double external_potential_prime(double val)
 {
-	double k_elastic =1;
-	return k_elastic*val;
+	/*double k_elastic =1;
+	return k_elastic*val;*/
+  return 4.*pow(val,3.)-5.*val;
 }
 
 double external_potential_second(double val)
 {
-	double k_elastic=1;
-	return k_elastic;
+	/*double k_elastic=1;
+	return k_elastic;*/
+  return 12.*pow(val,2.);
 }
 
 // The same applies to the variational Wave Function...
@@ -181,25 +205,32 @@ double external_potential_second(double val)
 // to modify its second derivative below!
 double variationalWaveFunction(double v)
 {
-	return 1.0;
+	//return 1.0;
 	//return exp(-0.5*v*v);
+  double mu = 0.79;
+  double sigma = 0.62;
+  return exp(-pow(v-mu,2.)/(2.*pow(sigma,2.)))+exp(-pow(v+mu,2.)/(2.*pow(sigma,2.)));
 }
 
 double variationalWaveFunction_second(double v)
 {
-	return 0;
+	//return 0;
 	//return v*v*exp(-0.5*v*v) - exp(-0.5*v*v);
+  double mu = 0.79;
+  double sigma = 0.62;
+  return exp(-pow(v-mu,2.)/(2.*pow(sigma,2.)))*(pow(v-mu,2.)/pow(sigma,4.)-pow(sigma,-2.))+exp(-pow(v+mu,2.)/(2.*pow(sigma,2.)))*(pow(v+mu,2.)/pow(sigma,4.)-pow(sigma,-2.));
 }
 
 void translation()
 {
 	totalTranslations++;
-	double delta = generator->Uniform(-delta_translation,delta_translation);
+	//double delta = generator->Uniform(-delta_translation,delta_translation);
+  double delta = rnd.Rannyu(-delta_translation,delta_translation);
 	double acc_density_matrix_difference=0;
 	int last = timeslices;
 	if(PIGS)
 		last=timeslices-1;
-		
+
 	for(int i=0;i<last;i++)
 	{
 		int inext = index_mask(i+1);
@@ -210,11 +241,11 @@ void translation()
 	}
 	// metropolis: PIGS contains also the statistical weight of the variational Wave Function.
 	double acceptance_probability = exp(-acc_density_matrix_difference);
-	
+
 	if(PIGS)
 		acceptance_probability *=variationalWaveFunction(positions[0]+delta)*variationalWaveFunction(positions[timeslices-1]+delta)/(variationalWaveFunction(positions[0])*variationalWaveFunction(positions[timeslices-1]));
-	
-	if(generator->Rndm()<acceptance_probability)
+
+	if(rnd.Rannyu()<acceptance_probability)
 	{
 		for(int i=0;i<timeslices;i++)
 			positions[i]+=delta;
@@ -225,9 +256,9 @@ void translation()
 /* BB removes a segment of the polymer, in this case from "starting_point+1" to "endpoint-1"
 and replaces it with a free particle propagation. The free particle propagation is achieved
 with the gaussian sampling of the kinetic part of the density matrix.
-The function index_mask handles the compatibility between PIGS and PIMC: in PIGS the polymer is 
+The function index_mask handles the compatibility between PIGS and PIMC: in PIGS the polymer is
 open, so you can't have a starting index greater than an ending index. In PIMC, instead, you
-have a ring polymer so when you reach the end you can continue from the beginning. 
+have a ring polymer so when you reach the end you can continue from the beginning.
 The compatibility solution that has been chosen consists in viewing the ring polymer as an open
 polymer that has been closed on periodic boundary contitions. index_mask takes this into account. */
 void brownianBridge()
@@ -236,10 +267,10 @@ void brownianBridge()
 	int available_starting_points = timeslices-brownianBridgeReconstructions-1; // for PIGS simulation
 	if(!PIGS)
 		available_starting_points = timeslices-1;
-	int starting_point = (int)(generator->Rndm()*available_starting_points);
-	
+	int starting_point = (int)(rnd.Rannyu()*available_starting_points);
+
 	int endpoint = index_mask(starting_point + brownianBridgeReconstructions + 1);
-	
+
 	double starting_coord = positions[starting_point];
 	double ending_coord = positions[endpoint];
 	double new_segment[brownianBridgeReconstructions+2];
@@ -252,11 +283,11 @@ void brownianBridge()
 		// gaussian sampling of the free particle propagator
 		double average_position = previous_position + (ending_coord-previous_position)/(left_reco+1);
 		double variance = 2*lambda*dtau*left_reco/(left_reco+1);
-		double newcoordinate = generator->Gaus(average_position,sqrt(variance));
+		double newcoordinate = rnd.Gauss(average_position,sqrt(variance));
 		new_segment[i+1] = newcoordinate;
 		previous_position=newcoordinate;
 	}
-	
+
 	// metropolis. Note that the kinetic part has been sampled exactely, thus only the
 	// potential part of the density matrix determines the acceptance probability of the move.
 	double acc_density_matrix_difference=0;
@@ -269,9 +300,9 @@ void brownianBridge()
 		oldcorr = potential_density_matrix(positions[i_old],positions[i_next_old]);
 		acc_density_matrix_difference += oldcorr-newcorr;
 	}
-	
+
 	double acceptance_probability = exp(-acc_density_matrix_difference);
-	if(generator->Rndm()<acceptance_probability)
+	if(rnd.Rannyu()<acceptance_probability)
 	{
 		for(int i=1;i<brownianBridgeReconstructions+1;i++)
 		{
@@ -300,7 +331,7 @@ void brownianMotion(int which) // BM is called only for PIGS simulations
 		ending_coord = positions[endpoint];
 		average_position = ending_coord;
                 variance = 2*lambda*dtau*(brownianMotionReconstructions+1);
-		starting_coord = generator->Gaus(average_position,sqrt(variance));
+		starting_coord = rnd.Gauss(average_position,sqrt(variance));
                 oldposition = positions[starting_point];
                 newposition = starting_coord;
         }
@@ -311,7 +342,7 @@ void brownianMotion(int which) // BM is called only for PIGS simulations
 		starting_coord = positions[starting_point];
                 average_position = starting_coord;
                 variance = 2*lambda*dtau*(brownianMotionReconstructions+1);
-		ending_coord = generator->Gaus(average_position,sqrt(variance));
+		ending_coord = rnd.Gauss(average_position,sqrt(variance));
 		oldposition = positions[endpoint];
 		newposition = ending_coord;
         }
@@ -326,7 +357,7 @@ void brownianMotion(int which) // BM is called only for PIGS simulations
                 // gaussian sampling of the free particle propagator
                 average_position = previous_position + (ending_coord-previous_position)/(left_reco+1);
                 variance = 2*lambda*dtau*left_reco/(left_reco+1);
-                double newcoordinate = generator->Gaus(average_position,sqrt(variance));
+                double newcoordinate = rnd.Gauss(average_position,sqrt(variance));
                 new_segment[i+1] = newcoordinate;
                 previous_position=newcoordinate;
         }
@@ -343,7 +374,7 @@ void brownianMotion(int which) // BM is called only for PIGS simulations
         }
 
         double acceptance_probability = exp(-acc_density_matrix_difference)*variationalWaveFunction(newposition)/variationalWaveFunction(oldposition);
-        if(generator->Rndm()<acceptance_probability)
+        if(rnd.Rannyu()<acceptance_probability)
         {
                 for(int i=0;i<brownianMotionReconstructions+2;i++)
                 {
@@ -376,19 +407,19 @@ void consoleOutput()
 }
 
 
-/* This function accumulates the expectation values in their respective variables. 
+/* This function accumulates the expectation values in their respective variables.
    At the end of the block, these variables are divided by the MCSTEPS value and the block average
-   and its squared value are accumulated in apposite variables.  
+   and its squared value are accumulated in apposite variables.
  */
 void upgradeAverages()
 {
 	for(int i=0;i<timeslices;i++)
 		potential_energy[i]+=external_potential(positions[i]);
-	
+
 	int flag=0;
 	if(PIGS)
 		flag=1;
-		
+
 	for(int i=flag;i<timeslices-flag;i++)
 	{
 		int i_mod = index_mask(i);
@@ -400,12 +431,12 @@ void upgradeAverages()
 		kinetic_energy[0]+=variationalLocalEnergy(positions[0]);
 		kinetic_energy[timeslices-1]+=variationalLocalEnergy(positions[timeslices-1]);
 	}
-	
+
 	upgradeHistogram();
 }
 
 /*
-This functions performs a common way to fill in the values of an histogram. 
+This functions performs a common way to fill in the values of an histogram.
 It's quite straightforward.
 */
 void upgradeHistogram()
@@ -432,9 +463,9 @@ void endBlock()  // calculating and accumulating block averages
 		kinetic_energy_accumulator[i]+=kinetic_energy[i];
 		kinetic_energy_square_accumulator[i]+=kinetic_energy[i]*kinetic_energy[i];
 		kinetic_energy[i]=0;
-		
+
 	}
-	
+
 	for(int i=0;i<histogram_bins;i++)
 	{
 		positions_histogram[i]/=MCSTEPS;
@@ -493,7 +524,7 @@ void finalizeHistogram()
 		hist_square_avg = positions_histogram_square_accumulator[i]/blocks;
 		error =sqrt(abs(hist_average*hist_average-hist_square_avg)/blocks);
                 out << current_position << " " << hist_average/norma << " " << error/norma << endl;
-                
+
         }
 	out.close();
 }
@@ -546,16 +577,16 @@ void deleteMemory()
 	delete potential_energy;
 	delete potential_energy_accumulator;
 	delete potential_energy_square_accumulator;
-                                                                                                                 
+
 	delete kinetic_energy;
 	delete kinetic_energy_accumulator;
 	delete kinetic_energy_square_accumulator;
-                                                                                                                 
+
 	delete positions_histogram;
 	delete positions_histogram_accumulator;
 	delete positions_histogram_square_accumulator;
 
-        delete generator;
+        //delete generator;
 }
 
 /****************************************************************
