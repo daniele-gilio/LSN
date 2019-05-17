@@ -91,14 +91,15 @@ int main (int argc, char *argv[]){
 
 	//Optimize Algorithm
 	cout << "Optimizing..." << endl;
-	for(mu=0.75;mu<0.8;mu+=0.01){
+
+	for(mu=0.75;mu<0.8;mu+=0.01){ //Probably not the best way to do it, nor the most elegant, but it works kinda well
 		for(sigma=0.55;sigma<0.65;sigma+=0.01){
 			accepted = 0.;
 			for(unsigned int i=0;i<block_size*block_number;i++){
 				xnew=rnd.Rannyu(x-delta,x+delta);
 				//Metropolis
-				px=pow(psi(x,mu,sigma),2.);
-	   		py=pow(psi(xnew,mu,sigma),2.);
+				px=psi_2(x,mu,sigma);
+	   		py=psi_2(xnew,mu,sigma);
 		   	a=min(1.,(py/px));
 		   	judge = rnd.Rannyu();
 		   	if(judge<=a){
@@ -128,13 +129,15 @@ int main (int argc, char *argv[]){
 	x=0.;
 	int nbin = 400;
 	double *hist = new double [nbin];
+	double *hist_2 = new double [nbin];
+	double *count = new double [nbin];
 	double x_min=-5., x_max=5.;
 	double bin_size = (x_max-x_min)/double(nbin);
 	out.open("potential.dat");
-	ofstream h;
-	h.open("hist.dat");
 	accepted=0.;
+
 	cout << "Performing Black Magic..." << endl;
+
 	for(unsigned int i=0;i<block_number;i++){
 	 	for(unsigned int j=0;j<block_size;j++){
 	       xnew=rnd.Rannyu(x-delta,x+delta);
@@ -147,10 +150,12 @@ int main (int argc, char *argv[]){
 		   			x=xnew;
 	       pot[i]+=(-0.5*d2_psi(x,mu,sigma)+v(x)*psi(x,mu,sigma))/(psi(x,mu,sigma));
 
-				 //h << x << endl;
+
 				for(int l=0;l<nbin;l++)
-					if(x>x_min+l*bin_size and x<x_min+(l+1)*bin_size){
+					if(x>x_min+double(l)*bin_size and x<x_min+double(l+1.)*bin_size){
 						hist[l]+=1.;
+						hist_2[l]+=1.;
+						count[l]+=1.;
 						accepted++;
 					}
    	}
@@ -171,17 +176,15 @@ int main (int argc, char *argv[]){
 
 			out << i+1 << ";" << prog0[i] << ";" << s_pot[i] << endl;
 	 }
-	 	//h.close();
-   	out.close();
-		cout << accepted << endl;
-		double z=0;
-		out.open("hist.dat");
-		for(int i=0;i<nbin;i++){
-			out << hist[i]*double(nbin)/(10.*accepted) << endl;
-			z+=hist[i]*double(nbin)/(10.*accepted);
-		}
 
-		cout << z << endl;
+   	out.close();
+		out.open("hist.dat");
+
+		for(int i=0;i<nbin;i++){
+			hist[i]/=(bin_size*double(accepted));
+			hist_2[i]/=(bin_size*double(accepted));
+			out << hist[i] << ";" << sqrt((hist_2[i]-hist[i]*hist[i])/(count[i]+1)) << endl; //Cheating again here
+		}
 		out.close();
 
 		cout << "Done" << endl;
