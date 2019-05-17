@@ -86,7 +86,7 @@ void Input(void){ //Prepare all stuff for the simulation
 	} else cerr << "PROBLEM: Unable to open seed.in" << endl;
 	rnd.SaveSeed();
 
-  ReadInput.open("input.liquid"); //Read input
+  ReadInput.open("input.solid"); //Read input
 
   ReadInput >> restart;
   ReadInput >> real_measure;
