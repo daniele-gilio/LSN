@@ -1,0 +1,17 @@
+900
+2
+2
+1000
+1
+2
+30
+0
+
+      input >> pop;
+      input >> n_matings;
+      input >> n_children;
+      input >> max_iterations;
+      input >> mutation_number;
+      input >> mutation_swaps;
+      input >> n_cities;
+      input >> city_dist;
