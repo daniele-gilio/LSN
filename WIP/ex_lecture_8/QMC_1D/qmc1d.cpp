@@ -13,15 +13,7 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 ************** PATH INTEGRAL MONTE CARLO ****************
 ************ APPLIED TO A SINGLE PARTICLE ***************
 ************** IN AN EXTERNAL POTENTIAL ****************/
-/*
-NOTE: you need the root package to be installed before compiling this program.
-See: http://root.cern.ch
-There are two other source files, too:
-constants.h: contains the declaration of every global variable that has been used.
-functions.h: contains the declaration of the function with a brief description.
-Once compiled, QMC1D is invoked with the command: "./qmc1d". It will read the settings
-in the file "input.dat".
-*/
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -589,12 +581,13 @@ void deleteMemory()
         //delete generator;
 }
 
-/****************************************************************
-*****************************************************************
-    _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
-   _/_/  _/ _/       _/       Physics Department
-  _/  _/_/    _/    _/       Universita' degli Studi di Milano
- _/    _/       _/ _/       Prof. D.E. Galli
-_/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
-*****************************************************************
-*****************************************************************/
+//Ported for use without ROOT by:
+/*************************************************************************
+**************************************************************************
+    _/_/_/_/       _/_/_/_/_/       Numerical Simulation Laboratory
+   _/     _/      _/               Physics Department
+  _/     _/      _/  _/_/_/       Università degli Studi di Milano
+ _/     _/ _    _/      _/  _    Daniele Gilio
+_/_/_/_/  /_/  _/_/_/_/_/  /_/  email: daniele.gilio@studenti.unimi.it
+**************************************************************************
+**************************************************************************/
