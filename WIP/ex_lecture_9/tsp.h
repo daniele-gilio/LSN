@@ -273,7 +273,7 @@ void generate(int n){
   }
 
   //Mating Season
-  for(int k=0;k<pop/2;k++){
+  for(int k=pop/2;k<pop;k++){
     ind mother, father;
     int cut_1=0;
     int sel_index=0;
@@ -285,7 +285,7 @@ void generate(int n){
     check(father);
 
     double p_mate = rnd.Rannyu();
-    if(p_mate<0.95){
+    if(p_mate<0.9){
       ind *children = new ind [n_children];
 
       for(int i=0;i<n_children;i++){
@@ -301,11 +301,11 @@ void generate(int n){
               children[i].setc(father.getc(k),j);
               break;
             }
-
+        int index = rnd.Rannyu(n_children, n_cities-n_children)+0.5;
         check(children[i]);
-        population[k+2-i-1]=children[i];
-        check(population[pop-i-1]);
-        population[k+2-i-1].calc_cost(cities);
+        population[k-i-1]=children[i];
+        check(population[k-i-1]);
+        population[k-i-1].calc_cost(cities);
 
       }
       delete []children;
@@ -317,7 +317,7 @@ void generate(int n){
   for(int i=0;i<pop;i++){
       p_mut = rnd.Rannyu();
       //Pair Swap
-      if(p_mut<0.02){
+      if(p_mut<0.05){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -330,7 +330,7 @@ void generate(int n){
       }
 
       //Whole Translation
-      if(n%5==0){
+      if(n%30==0){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -345,7 +345,7 @@ void generate(int n){
       }
 
       //Contiguous Cities Translation
-      if(p_mut>0.05 and p_mut<0.08){
+      if(p_mut>0.05 and p_mut<0.1){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -410,6 +410,10 @@ void save(){
   for(int i=0;i<n_cities;i++){
     out << cities[population[0].getc(i)].getx() << " " << cities[population[0].getc(i)].gety() << endl;
   }
+
+  out << cities[population[0].getc(0)].getx() << " " << cities[population[0].getc(0)].gety() << endl;
+
+
   out.close();
 }
 

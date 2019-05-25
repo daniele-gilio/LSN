@@ -7,11 +7,9 @@ int main(){
     cout << "Circumference City Distribution" << endl;
   else
     cout << "Square City Distribution" << endl;
-  cout << "Acting as a God ..." << endl;
+  cout << "Acting as a God... (creating people, killing people, being merciful sometimes, you know... Go(o)d stuff)" << endl;
   for(int i=0;i<max_iterations;i++){
     generate(i);
-    /*if(i%10==0)
-      cout << double(i)*100./double(max_iterations) << " %" << endl;*/
   }
 
   save();
