@@ -1,3 +1,12 @@
+/*************************************************************************
+**************************************************************************
+    _/_/_/_/       _/_/_/_/_/       Numerical Simulation Laboratory
+   _/     _/      _/               Physics Department
+  _/     _/      _/  _/_/_/       Università degli Studi di Milano
+ _/     _/ _    _/      _/  _    Daniele Gilio
+_/_/_/_/  /_/  _/_/_/_/_/  /_/  email: daniele.gilio@studenti.unimi.it
+**************************************************************************
+**************************************************************************/
 #ifndef _TSP_
 #define _TSP_
 #include <cmath>
@@ -6,6 +15,8 @@
 #include "random.h"
 
 using namespace std;
+
+//Global Variables Needed for Classes to Work
 
 int n_cities=0;
 
@@ -77,7 +88,7 @@ public:
   }
 
 private:
-  int n = n_cities; //the last one is the same as the first
+  int n = n_cities;
   int *c = NULL;
   double cost=0.; //embed cost into individual class
   double distance(city a, city b){
@@ -93,7 +104,7 @@ bool city_dist = false; //false for circumference, true for square
 Random rnd;
 ind *population = NULL;
 city *cities = NULL;
-ofstream out;
+ofstream out, mean;
 
 //-------------------------Functions------------------------------------------------------------------------
 
@@ -106,6 +117,7 @@ int Pbc(int index){
 }
 
 void check(ind s){
+  //Check if the sum of all the cities is correct
   double k=0.;
   for(int i=0;i<n_cities;i++)
     k+=s.getc(i);
@@ -252,15 +264,26 @@ void Input(){
 
 
 void generate(int n){
-  if(city_dist==false)
+  //Save best and mean
+  double m=0.;
+  if(city_dist==false){
     out.open("best_circ.dat",ios::app);
-  else
+    mean.open("mean_circ.dat",ios::app);
+  }
+  else{
     out.open("best_sq.dat",ios::app);
+    mean.open("mean_sq.dat",ios::app);
+  }
   out << n << " " << population[0].get_cost() << endl;
-  //cout << n << " " << population[0].get_cost() << endl;
   out.close();
 
-  //Selection
+  for(int i=0;i<pop/2;i++)
+    m+=population[i].get_cost();
+
+  mean << n << " " << m*2./double(pop) << endl;
+  mean.close();
+
+  //Selection (Mercy Mechanism)
   int *sel_ind = NULL;
   ind *lucky_boys = NULL;
   if(mercy_number!=0){
@@ -277,20 +300,19 @@ void generate(int n){
     ind mother, father;
     int cut_1=0;
     int sel_index=0;
-    sel_index = pop*pow(rnd.Rannyu(),30.);
+    sel_index = pop*pow(rnd.Rannyu(),20.);
     mother = population[sel_index];
     check(mother);
-    sel_index = pop*pow(rnd.Rannyu(),30.);
+    sel_index = pop*pow(rnd.Rannyu(),20.);
     father = population[sel_index];
     check(father);
 
     double p_mate = rnd.Rannyu();
-    if(p_mate<0.9){
+    if(p_mate<0.95){
       ind *children = new ind [n_children];
 
       for(int i=0;i<n_children;i++){
         cut_1=rnd.Rannyu(0.,n_cities/2.)+0.5;
-        //cut_1=15;
 
         for(int j=0;j<cut_1;j++)
           children[i].setc(mother.getc(j), j);
@@ -301,7 +323,6 @@ void generate(int n){
               children[i].setc(father.getc(k),j);
               break;
             }
-        int index = rnd.Rannyu(n_children, n_cities-n_children)+0.5;
         check(children[i]);
         population[k-i-1]=children[i];
         check(population[k-i-1]);
@@ -317,7 +338,7 @@ void generate(int n){
   for(int i=0;i<pop;i++){
       p_mut = rnd.Rannyu();
       //Pair Swap
-      if(p_mut<0.05){
+      if(p_mut<0.1){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -325,12 +346,11 @@ void generate(int n){
         swap(c[h],c[h+1]);
         population[i].setc(c);
         check(population[i]);
-        //population[i].calc_cost(cities);
         delete []c;
       }
 
-      //Whole Translation
-      if(n%30==0){
+      //Whole Translation (do it every n generations)
+      if(n%55==0){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -345,7 +365,7 @@ void generate(int n){
       }
 
       //Contiguous Cities Translation
-      if(p_mut>0.05 and p_mut<0.1){
+      if(p_mut>0.1 and p_mut<0.15){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=population[i].getc(j);
@@ -361,8 +381,8 @@ void generate(int n){
         delete []c;
       }
 
-      //Delete and reconstruct
-      if(p_mut>0.1 and p_mut<0.11){
+      //Delete and reconstruct (very destructive, low probability)
+      if(p_mut>0.15 and p_mut<0.16){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++){
             c[j]=j;
@@ -402,6 +422,7 @@ void generate(int n){
 }
 
 void save(){
+  //Save best path
   if(city_dist==false)
     out.open("best_path_circ.dat");
   else

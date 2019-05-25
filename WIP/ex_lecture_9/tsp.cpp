@@ -1,7 +1,15 @@
+/*************************************************************************
+**************************************************************************
+    _/_/_/_/       _/_/_/_/_/       Numerical Simulation Laboratory
+   _/     _/      _/               Physics Department
+  _/     _/      _/  _/_/_/       Università degli Studi di Milano
+ _/     _/ _    _/      _/  _    Daniele Gilio
+_/_/_/_/  /_/  _/_/_/_/_/  /_/  email: daniele.gilio@studenti.unimi.it
+**************************************************************************
+**************************************************************************/
 #include "tsp.h"
 
 int main(){
-  //ind *population = new ind [900];
   Input();
   if(city_dist==false)
     cout << "Circumference City Distribution" << endl;

@@ -1,9 +1,9 @@
-1000
+1200
 2
-300
-0
+250
+8
 30
-0
+1
 
       input >> pop;
       input >> n_children;
