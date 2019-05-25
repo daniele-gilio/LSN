@@ -7,9 +7,9 @@
 
 using namespace std;
 
-int pop=900, n_matings=0, n_children=0, max_iterations=0, mutation_number=0, mutation_swaps=0, n_cities=0;
-bool city_dist = false; //false for circumference, true for square
-Random rnd;
+int n_cities=0;
+
+//------Classes---------
 
 class city{
 public:
@@ -36,29 +36,13 @@ private:
   double x,y;
 };
 
-city *cities = new city [30]; //also hard coded
-
 class ind{
 public:
   ind(){
+    c = new int [n];
     for(int i=0;i<n;i++){
       c[i]=0;
     }
-  }
-
-  //Copy constructor
-  ind(const ind & s){
-    for(int i=0;i<n;i++)
-      c[i]=s.c[i];
-  }
-
-  ~ind(){
-    delete []c;
-  }
-
-  void operator = (const ind & s){
-    for(int i=0;i<n;i++)
-      c[i]=s.c[i];
   }
 
   void setc(int s, int index){
@@ -79,13 +63,13 @@ public:
     return c[index];
   }
 
-  void calc_cost(city * city){
+  void calc_cost(city *city){
     //cost=cost(cities, c, n);
     cost=0.;
     for(int i=0;i<n-1;i++){
-      cost+=sqrt(pow(city[c[i]].getx()-city[c[i]+1].getx(),2.)+pow(city[c[i]].gety()-city[c[i]+1].gety(),2.));
+      cost+=distance(city[c[i]], city[c[i+1]]);
     }
-    cost+=sqrt(pow(city[c[n-1]].getx()-city[0].getx(),2.)+pow(city[c[n-1]].gety()-city[c[0]].gety(),2.));
+    cost+=distance(city[c[n-1]], city[c[0]]);
   }
 
   double get_cost(){
@@ -93,33 +77,107 @@ public:
   }
 
 private:
-  int n = 30; //the last one is the same as the first
-  int *c = new int [n]; //number of cities needs to be hard coded here (this is a city index array)
-  double cost; //embed cost into individual class
+  int n = n_cities; //the last one is the same as the first
+  int *c = NULL;
+  double cost=0.; //embed cost into individual class
+  double distance(city a, city b){
+    return sqrt(pow(a.getx()-b.getx(), 2.)+pow(a.gety()-b.gety(), 2.));
+  }
 
 };
 
+//---------------------------Global Variables--------------------------------------------------------------
+
+int pop=0, n_children=0, max_iterations=0, mercy_number=0;
+bool city_dist = false; //false for circumference, true for square
+Random rnd;
+ind *population = NULL;
+city *cities = NULL;
+ofstream out;
+
+//-------------------------Functions------------------------------------------------------------------------
+
 int Pbc(int index){
-  if(index>29){
-    return index-30;
+  if(index>n_cities-1){
+    return index-n_cities;
   }
 
   else return index;
 }
 
-void Input(ind* population){
+void check(ind s){
+  double k=0.;
+  for(int i=0;i<n_cities;i++)
+    k+=s.getc(i);
+  if(k==(n_cities-1)*n_cities/2){
+    return;
+  }
+
+  else{
+    std::cerr << "I fucked up :(" << '\n';
+  }
+}
+
+void swap(ind* population, int i, int j){
+  ind t=population[i];
+  population[i]=population[j];
+  population[j]=t;
+}
+
+bool find(int a, int *b, int lenght){
+  for(int j=0;j<lenght;j++){
+      if(a==b[j]){
+        return true;
+        break;
+      }
+    }
+  return false;
+}
+
+void creation(){
+
+  int *c = new int [n_cities];
+  for(int i=0;i<pop;i++){
+    for(int j=0;j<n_cities;j++){
+      c[j]=j;
+    }
+
+    for(int j=0;j<100;j++){
+      int a = rnd.Rannyu(0.,n_cities-1.)+0.5;
+      int b = rnd.Rannyu(0.,n_cities-1.)+0.5;
+      swap(c[a],c[b]);
+    }
+
+    population[i].setc(c);
+    check(population[i]);
+    population[i].calc_cost(cities);
+  }
+
+  delete []c;
+
+  //Sort for fitness
+  for(int i=0;i<pop-1;i++)
+    for(int j=i+1;j<pop;j++)
+      if(population[j].get_cost()<population[i].get_cost())
+        swap(population, i, j);
+
+}
+
+void Input(){
   //Read Parameters from file
   ifstream in;
   in.open("input.dat");
   in >> pop;
-  in >> n_matings;
   in >> n_children;
   in >> max_iterations;
-  in >> mutation_number;
-  in >> mutation_swaps;
+  in >> mercy_number;
   in >> n_cities;
   in >> city_dist;
   in.close();
+
+  //Initialize Population and Cities
+  population = new ind [pop];
+  cities = new city [n_cities];
 
   //Inizialization of the Random Number Generator
   int seed[4];
@@ -173,48 +231,13 @@ void Input(ind* population){
 
   }
 
-  ofstream c;
-  c.open("cities.dat");
+  out.open("cities.dat");
   for(int i=0;i<n_cities;i++){
-    c << cities[i].getx() << " " << cities[i].gety() << endl;
+    out << cities[i].getx() << " " << cities[i].gety() << endl;
   }
-  c.close();
+  out.close();
 
-  //Initialize Population
-  //ind population[pop];
-
-  //Population Creation via random generation
-  /*for(int i=0;i<pop;i++){
-    int *c = new int [n_cities];
-    for(int j=0;j<n_cities;j++){
-      c[j]=int(rnd.Rannyu(1.,30.)+0.5);
-      for(int k=0;k<j;k++){
-        if(c[j]==c[k]){
-          c[j]=int(rnd.Rannyu(1.,30.)+0.5);
-          k=0;
-        }
-      }
-    }
-    population[i].setc(c);
-    population[i].calc_cost(cities);
-  }*/
-
-  //Initialization via array shuffling
-  for(int i=0;i<pop;i++){
-    int *c = new int [n_cities];
-    for(int j=0;j<n_cities;j++){
-      c[j]=j;
-    }
-
-    for(int j=0;j<100;j++){
-      int a = rnd.Rannyu(0.,29.)+0.5;
-      int b = rnd.Rannyu(0.,29.)+0.5;
-      swap(c[a],c[b]);
-    }
-
-    population[i].setc(c);
-    population[i].calc_cost(cities);
-  }
+  creation();
 
   /*for(int i=0;i<pop;i++){
     cout << "Individual " << i+1 << endl;
@@ -226,80 +249,168 @@ void Input(ind* population){
   }*/
 }
 
-void swap(ind* population, int i, int j){
-  ind t = population[i];
-  population[i]=population[j];
-  population[j]=t;
-}
-
-void quickSort(ind *array, int low, int high)
-{
-    //cout << "k" << endl;
-    int i = low;
-    int j = high;
-    int pivot = array[i+(i - j) / 2].get_cost();
-    i=low+1;
-    while (i <= j)
-    {
-        while (i<=j and array[i].get_cost() <= pivot)
-            i++;
-        while (i<=j and array[j].get_cost() > pivot)
-            j--;
-        if (i <= j)
-        {
-            swap(array,i,j);
-            i++;
-            j--;
-        }
-    }
-    if (j > low)
-        quickSort(array, low, j);
-    if (i < high)
-        quickSort(array, i, high);
-}
-void generate(int n, ind* population){
-  //Sort for fitness
-  /*for(int i=0;i<pop-1;i++)
-    for(int j=i+1;j<pop;j++)
-      if(population[j].get_cost()<population[i].get_cost())
-        swap(population, i, j);*/
-
-  //Mutations
-  int p = rnd.Rannyu();
-  if(p<0.05){
-    for(int i=0;i<pop;i++){
-      int *c = new int [n_cities];
-      for(int j=0;j<n_cities;j++)
-        c[j]=population[i].getc(j);
-      int h = rnd.Rannyu(0.,28.)+0.5;
-      swap(c[h],c[h+1]);
-      population[i].setc(c);
-      population[i].calc_cost(cities);
-    }
-  }
-
-  //Sort for fitness
-  /*for(int i=0;i<pop-1;i++)
-    for(int j=i+1;j<pop;j++)
-      if(population[j].get_cost()<population[i].get_cost())
-        swap(population, i, j);*/
-  quickSort(population,0,pop);
 
 
-  ofstream out;
-  out.open("best.dat",ios::app);
+void generate(int n){
+  if(city_dist==false)
+    out.open("best_circ.dat",ios::app);
+  else
+    out.open("best_sq.dat",ios::app);
   out << n << " " << population[0].get_cost() << endl;
   //cout << n << " " << population[0].get_cost() << endl;
   out.close();
-  /*for(int i=0;i<n_cities;i++){
-    cout << population[0].getc(i) << endl;
-  }
-  cout << endl;*/
 
+  //Selection
+  int *sel_ind = NULL;
+  ind *lucky_boys = NULL;
+  if(mercy_number!=0){
+    sel_ind = new int [mercy_number];
+    lucky_boys = new ind [mercy_number];
+    for(int i=0;i<mercy_number;i++){
+      sel_ind[i] = pop*pow(rnd.Rannyu(),10.);
+      lucky_boys[i] = population[sel_ind[i]];
+    }
+  }
 
   //Mating Season
+  for(int k=0;k<pop/2;k++){
+    ind mother, father;
+    int cut_1=0;
+    int sel_index=0;
+    sel_index = pop*pow(rnd.Rannyu(),30.);
+    mother = population[sel_index];
+    check(mother);
+    sel_index = pop*pow(rnd.Rannyu(),30.);
+    father = population[sel_index];
+    check(father);
+
+    double p_mate = rnd.Rannyu();
+    if(p_mate<0.95){
+      ind *children = new ind [n_children];
+
+      for(int i=0;i<n_children;i++){
+        cut_1=rnd.Rannyu(0.,n_cities/2.)+0.5;
+        //cut_1=15;
+
+        for(int j=0;j<cut_1;j++)
+          children[i].setc(mother.getc(j), j);
+
+        for(int j=cut_1;j<n_cities;j++)
+          for(int k=0;k<n_cities;k++)
+            if(find(father.getc(k),children[i].getc(),n_cities)==false){
+              children[i].setc(father.getc(k),j);
+              break;
+            }
+
+        check(children[i]);
+        population[k+2-i-1]=children[i];
+        check(population[pop-i-1]);
+        population[k+2-i-1].calc_cost(cities);
+
+      }
+      delete []children;
+    }
+  }
+
+  //Mutations
+  double p_mut = 0.;
+  for(int i=0;i<pop;i++){
+      p_mut = rnd.Rannyu();
+      //Pair Swap
+      if(p_mut<0.02){
+        int *c = new int [n_cities];
+        for(int j=0;j<n_cities;j++)
+          c[j]=population[i].getc(j);
+        int h = rnd.Rannyu(0.,n_cities-2.)+0.5;
+        swap(c[h],c[h+1]);
+        population[i].setc(c);
+        check(population[i]);
+        //population[i].calc_cost(cities);
+        delete []c;
+      }
+
+      //Whole Translation
+      if(n%5==0){
+        int *c = new int [n_cities];
+        for(int j=0;j<n_cities;j++)
+          c[j]=population[i].getc(j);
+        int h = rnd.Rannyu(0.,n_cities/2.)+0.5; //Max Half Positions Slide
+        for(int j=0;j<n_cities;j++){
+          swap(c[Pbc(j+h)],c[j]);
+        }
+
+        population[i].setc(c);
+        check(population[i]);
+        delete []c;
+      }
+
+      //Contiguous Cities Translation
+      if(p_mut>0.05 and p_mut<0.08){
+        int *c = new int [n_cities];
+        for(int j=0;j<n_cities;j++)
+          c[j]=population[i].getc(j);
+
+        int h = rnd.Rannyu(0.,n_cities/2.-0.5)+0.5; //Start
+        int l = rnd.Rannyu(n_cities/2.+0.5, n_cities-2.)+0.5; //Finish
+        int g = rnd.Rannyu(0.,n_cities/2.)+0.5; //Lenght of Translation
+
+        for(int j=h;j<l;j++)
+          swap(c[Pbc(j+g)],c[j]);
+        population[i].setc(c);
+        check(population[i]);
+        delete []c;
+      }
+
+      //Delete and reconstruct
+      if(p_mut>0.1 and p_mut<0.11){
+        int *c = new int [n_cities];
+        for(int j=0;j<n_cities;j++){
+            c[j]=j;
+          }
+
+        for(int j=0;j<100;j++){
+          int a = rnd.Rannyu(0.,n_cities-1.)+0.5;
+          int b = rnd.Rannyu(0.,n_cities-1.)+0.5;
+          swap(c[a],c[b]);
+        }
+
+        population[i].setc(c);
+        check(population[i]);
+        delete []c;
+      }
+
+      population[i].calc_cost(cities);
+  }
+
+  for(int i=0;i<mercy_number;i++){
+    int t = rnd.Rannyu(0.,pop-1.)+0.5;
+    population[t]=lucky_boys[i];
+    check(population[t]);
+  }
+
+  delete []lucky_boys;
+  delete []sel_ind;
+  //Sort for fitness
+  for(int i=0;i<pop-1;i++){
+    for(int j=i+1;j<pop;j++)
+      if(population[j].get_cost()<population[i].get_cost())
+        swap(population, i, j);
+    check(population[i]);
+  }
 
 
+}
+
+void save(){
+  if(city_dist==false)
+    out.open("best_path_circ.dat");
+  else
+    out.open("best_path_sq.dat");
+
+  for(int i=0;i<n_cities;i++){
+    out << cities[population[0].getc(i)].getx() << " " << cities[population[0].getc(i)].gety() << endl;
+  }
+  out.close();
 }
 
 #endif

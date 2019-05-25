@@ -9,6 +9,6 @@ tsp.o : tsp.cpp tsp.h
 random.o : random.cpp random.h
 	$(CC) -c random.cpp -o random.o $(CFLAGS)
 clean :
-	rm *.o seed.out tsp.exe best.dat
+	rm *.o seed.out tsp.exe best_circ.dat best_sq.dat best_path_sq.dat best_path_circ.dat
 
 all: tsp.exe
