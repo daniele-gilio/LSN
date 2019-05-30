@@ -1,0 +1,15 @@
+1
+2
+500
+0
+30
+1
+1000
+
+      input >> pop;
+      input >> n_children;
+      input >> max_iterations;
+      input >> mercy_number;
+      input >> n_cities;
+      input >> city_dist;
+      input >> n_moves;
