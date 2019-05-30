@@ -1,0 +1,4 @@
+30
+0
+  in >> n_cities;
+  in >> city_dist;

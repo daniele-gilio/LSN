@@ -147,8 +147,8 @@ bool find(int a, int *b, int lenght){
   return false;
 }
 
-double Boltzmann(double e_1, double e_2, double T){
-  return exp((e_1-e_2)/T);
+double Boltzmann(double e_new, double e_old, double T){
+  return exp(-(e_new-e_old)/T);
 }
 
 void creation(){
@@ -179,9 +179,7 @@ void Input(){
   ifstream in;
   in.open("input.dat");
   in >> pop;
-  in >> n_children;
   in >> max_iterations;
-  in >> mercy_number;
   in >> n_cities;
   in >> city_dist;
   in >> n_moves;
@@ -272,9 +270,9 @@ void generate(double T){
   for(int i=0;i<pop;i++){
     for(int k=0;k<n_moves;k++){
       test.setc(population[i].getc());
-      //p_mut = rnd.Rannyu();
+      p_mut = rnd.Rannyu();
       //Pair Swap
-      if(p_mut<1.){
+      if(p_mut<0.4){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=test.getc(j);
@@ -285,9 +283,8 @@ void generate(double T){
         delete []c;
       }
 
-
       //Contiguous Cities Translation
-      if(/*p_mut>0.3 and p_mut<0.6*/ p_mut < 1.){
+      if(p_mut>0.4 and p_mut<0.8){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=test.getc(j);
@@ -304,7 +301,7 @@ void generate(double T){
       }
 
       //Contiguous city inversion
-      if(/*p_mut>0.6 and p_mut<0.9*/ p_mut<1.){
+      if(p_mut>0.8 and p_mut<1.){
         int *c = new int [n_cities];
         for(int j=0;j<n_cities;j++)
           c[j]=test.getc(j);
@@ -322,49 +319,18 @@ void generate(double T){
         delete []c;
       }
 
-      /*
-      //Delete and reconstruct (very destructive, low probability)
-      if(p_mut>0.9 and p_mut<0.91){
-        int *c = new int [n_cities];
-        for(int j=0;j<n_cities;j++){
-            c[j]=j;
-          }
+    }
 
-        for(int j=0;j<100;j++){
-          int a = rnd.Rannyu(0.,n_cities-1.)+0.5;
-          int b = rnd.Rannyu(0.,n_cities-1.)+0.5;
-          swap(c[a],c[b]);
-        }
-
-        test.setc(c);
-        check(test);
-        delete []c;
-      } */
-
-      //Whole Translation (do it every generation)
-      //if(int(T)%1==0){
-        int *c = new int [n_cities];
-        for(int j=0;j<n_cities;j++)
-          c[j]=test.getc(j);
-        int h = rnd.Rannyu(0.,n_cities/2.)+0.5; //Max Half Positions Slide
-        for(int j=0;j<n_cities;j++){
-          swap(c[Pbc(j+h)],c[j]);
-        }
-
-        test.setc(c);
-        check(test);
-        delete []c;
-      //}
-
-      test.calc_cost(cities);
+    test.calc_cost(cities);
+    if(test.get_cost()<population[i].get_cost()){
+      population[i]=test;
+      check(population[i]);
+    }
+    else if(rnd.Rannyu()<=Boltzmann(test.get_cost(), population[i].get_cost(),T)){
+      population[i]=test;
+      check(population[i]);
+    }
   }
-
-  if(rnd.Rannyu()<=Boltzmann(population[i].get_cost(),test.get_cost(),T)){
-    population[i]=test;
-    check(population[i]);
-  }
-
-}
 
 }
 
