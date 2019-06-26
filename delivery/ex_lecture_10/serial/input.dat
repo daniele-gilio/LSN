@@ -1,0 +1,11 @@
+1
+10000
+30
+1
+1000
+
+      input >> pop;
+      input >> max_iterations;
+      input >> n_cities;
+      input >> city_dist;
+      input >> n_moves;
